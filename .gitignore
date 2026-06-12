@@ -1,0 +1,48 @@
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+env/
+
+.pytest_cache/
+.mypy_cache/
+
+.DS_Store
+.idea/
+.vscode/
+
+alarm_system.log
+*.log
+
+debug_*.jpg
+temp*.jpg
+
+alarm_images/**
+!alarm_images/.gitkeep
+
+dist/
+build/
+coverage/
+node_modules/
+
+.opencode/node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data and runtime
+data/
+*.db
+*.sqlite3
+
+# YOLO weights (download separately)
+yolov8*.pt
+
+# OpenSpec archive (history, not source)
+openspec/changes/archive/
+
+# Sisyphus working files
+.sisyphus/
