@@ -1,16 +1,20 @@
-# MallSenseAI development dependencies
-#
-# This file is for REFERENCE ONLY. The local dev environment reuses the shared
-# PostgreSQL (postgres16, pgvector/pgvector:pg16, port 5432) and Redis
-# (redis-dev, redis:7-alpine, port 6379) containers that are already running.
-#
-# To set up the database:
-#   1. Create the database: docker exec postgres16 psql -U langchat -d langchat -c "CREATE DATABASE mallsenseai;"
-#   2. Enable pgvector:     docker exec postgres16 psql -U langchat -d mallsenseai -c "CREATE EXTENSION IF NOT EXISTS vector;"
-#   3. Create schema:        python3 -c "from backend.app.db.session import engine; from backend.app.models import Base; Base.metadata.create_all(bind=engine)"
-#   4. Seed admin:           python3 -c "from backend.app.db.seed import seed_all; seed_all()"
-#   5. Migrate legacy data:  python3 backend/app/db/run_migration.py --real-run
-#
-# Connection info (matches .env.example):
-#   PostgreSQL: postgresql+psycopg2://langchat:langchat@localhost:5432/mallsenseai
-#   Redis:      redis://localhost:6379/0
+# Development environment — infrastructure services only
+# Backend: python3 -m uvicorn backend.app.main:app --port 5380
+# Frontend: cd frontend && npm run dev
+# Worker: python3 -m workers.run
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-langchat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-langchat}
+      POSTGRES_DB: ${POSTGRES_DB:-mallsenseai}
+    volumes:
+      - mallsenseai_dev_pgdata:/var/lib/postgresql/data
+
+volumes:
+  mallsenseai_dev_pgdata:
