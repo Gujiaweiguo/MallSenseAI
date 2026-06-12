@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/mallsenseai_dev.db"
     secret_key: str = Field(default="", min_length=0)
     access_token_expire_minutes: int = 60
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5373"])
 
     alarm_threshold: int = 3000
     alarm_interval_minutes: int = 1
