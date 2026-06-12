@@ -13,7 +13,7 @@
       </el-select>
       <el-select v-model="statusFilter" placeholder="Status" clearable style="width: 180px" @change="currentPage = 1">
         <el-option label="All" value="" />
-        <el-option label="Pending" value="pending" />
+        <el-option label="Pending" value="new" />
         <el-option label="Confirmed" value="confirmed" />
         <el-option label="False Positive" value="false_positive" />
         <el-option label="Resolved" value="resolved" />
@@ -39,7 +39,7 @@
       </el-table-column>
       <el-table-column label="Actions" width="260" fixed="right">
         <template #default="{ row }">
-          <template v-if="row.status === 'pending'">
+          <template v-if="row.status === 'new'">
             <el-button type="success" size="small" :loading="acting === row.id" @click="handleConfirm(row.id)">
               Confirm
             </el-button>
@@ -85,6 +85,7 @@ import {
   resolveAlert,
 } from '@/api/resources';
 import type { Alert } from '@/api/types';
+import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
 const alerts = ref<Alert[]>([]);
 const loading = ref(false);
@@ -126,7 +127,7 @@ function severityType(severity: string): 'success' | 'warning' | 'info' | 'dange
 function alertStatusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
   if (status === 'resolved') return 'success';
   if (status === 'confirmed') return 'warning';
-  if (status === 'pending') return 'info';
+  if (status === 'new') return 'info';
   if (status === 'false_positive') return 'danger';
   return 'info';
 }
@@ -138,7 +139,7 @@ function formatDate(value: string): string {
 async function loadAlerts(): Promise<void> {
   loading.value = true;
   try {
-    alerts.value = await listAlerts({ limit: 100 });
+    alerts.value = await listAlerts({ limit: DEFAULT_LIST_LIMIT });
   } catch {
     ElMessage.error('Failed to load alerts.');
   } finally {

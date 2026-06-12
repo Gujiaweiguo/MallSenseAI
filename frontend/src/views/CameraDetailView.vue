@@ -84,6 +84,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { deleteCamera, getCamera, updateCamera } from '@/api/cameras';
 import type { Camera, CameraStatus } from '@/api/types';
+import { cameraStatusTagType } from '@/utils/tagType';
+import { DEFAULT_CAMERA_PORT } from '@/utils/constants';
 
 const route = useRoute();
 const router = useRouter();
@@ -106,16 +108,11 @@ const editForm = reactive<EditForm>({
   name: '',
   location: '',
   ip: '',
-  port: 80,
+  port: DEFAULT_CAMERA_PORT,
   status: 'active',
 });
 
-function statusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
-  if (status === 'active') return 'success';
-  if (status === 'maintenance') return 'warning';
-  if (status === 'inactive') return 'info';
-  return 'danger';
-}
+const statusType = cameraStatusTagType;
 
 function startEditing(): void {
   if (!camera.value) return;

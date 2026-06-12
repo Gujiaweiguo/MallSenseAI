@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 
 from shapely.geometry import Polygon
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -48,7 +51,7 @@ def validate_polygon(points: list[tuple[float, float]]) -> ValidationResult:
             if poly.is_valid and poly.area == 0.0:
                 errors.append("Polygon points are collinear — resulting area is zero")
         except Exception:
-            pass  # Shapely will also catch degenerate input
+            logger.debug("Collinearity check failed for polygon points", exc_info=True)
 
     # --- self-intersection ---
     if len(points) >= 3:

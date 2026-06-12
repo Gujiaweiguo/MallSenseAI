@@ -65,6 +65,7 @@ class HealthCheckService:
                 h = await self.check_camera(cam.id, db)
                 return cam.id, h
             except Exception:
+                logger.warning("Health check failed for camera %s", cam.id, exc_info=True)
                 return cam.id, CameraHealth()
 
         for coro in asyncio.as_completed([_check(c) for c in cameras]):

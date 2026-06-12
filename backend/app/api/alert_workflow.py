@@ -48,7 +48,7 @@ class TransitionRequest(BaseModel):
     response_model=AlertResponse,
     dependencies=[Depends(require_role(UserRole.operator))],
 )
-def confirm_alert(alert_id: int, db: Session = Depends(get_db)) -> object:
+def confirm_alert(alert_id: int, db: Session = Depends(get_db)) -> dict:
     """Confirm a pending alert and auto-create a work order."""
     try:
         return AlertService.confirm_alert(alert_id, db)
@@ -67,7 +67,7 @@ def mark_false_positive(
     alert_id: int,
     payload: FalsePositiveRequest = FalsePositiveRequest(),
     db: Session = Depends(get_db),
-) -> object:
+) -> dict:
     """Mark an alert as false positive."""
     try:
         return AlertService.mark_false_positive(alert_id, db, reason=payload.reason)
@@ -86,7 +86,7 @@ def resolve_alert(
     alert_id: int,
     payload: ResolveRequest = ResolveRequest(),
     db: Session = Depends(get_db),
-) -> object:
+) -> dict:
     """Resolve a confirmed alert."""
     try:
         return AlertService.resolve_alert(alert_id, db, notes=payload.notes)

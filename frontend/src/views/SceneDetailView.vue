@@ -153,9 +153,8 @@ async function savePolygon(geometry: RoiGeometry): Promise<void> {
     drawingEnabled.value = false;
     ElMessage.success('ROI created.');
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      ElMessage.error('Failed to create ROI.');
-    }
+    if (error === 'cancel') return;
+    ElMessage.error('Failed to create ROI.');
   }
 }
 
@@ -166,9 +165,8 @@ async function confirmDeleteRoi(roiId: number, roiName: string): Promise<void> {
     rois.value = rois.value.filter((item) => item.id !== roiId);
     ElMessage.success('ROI deleted.');
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      ElMessage.error('Failed to delete ROI.');
-    }
+    if (error === 'cancel') return;
+    ElMessage.error('Failed to delete ROI.');
   }
 }
 

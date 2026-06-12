@@ -102,7 +102,9 @@ import { ElMessage } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { createCamera, deleteCamera, listCameras, updateCamera } from '@/api/cameras';
-import type { Camera, CameraStatus } from '@/api/types';
+import type { Camera, CameraStatus, CameraUpdatePayload } from '@/api/types';
+import { cameraStatusTagType } from '@/utils/tagType';
+import { DEFAULT_CAMERA_PORT, DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
 const cameras = ref<Camera[]>([]);
 const loading = ref(false);
@@ -129,7 +131,7 @@ const defaultForm = (): CameraForm => ({
   name: '',
   location: '',
   ip: '',
-  port: 80,
+  port: DEFAULT_CAMERA_PORT,
   username: 'admin',
   password: '',
   status: 'active',
@@ -142,12 +144,7 @@ const pagedCameras = computed(() => {
   return cameras.value.slice(start, start + pageSize.value);
 });
 
-function statusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
-  if (status === 'active') return 'success';
-  if (status === 'maintenance') return 'warning';
-  if (status === 'inactive') return 'info';
-  return 'danger';
-}
+const statusType = cameraStatusTagType;
 
 function openCreateDialog(): void {
   isEditing.value = false;
@@ -163,7 +160,7 @@ function openEditDialog(camera: Camera): void {
   form.location = camera.location;
   form.ip = camera.ip;
   form.port = camera.port;
-  form.username = (camera as unknown as Record<string, string>).username ?? 'admin';
+  form.username = camera.username ?? 'admin';
   form.password = '';
   form.status = camera.status;
   dialogVisible.value = true;
@@ -178,7 +175,7 @@ async function handleSubmit(): Promise<void> {
   submitLoading.value = true;
   try {
     if (isEditing.value && editingId.value !== null) {
-      const payload: Record<string, unknown> = {
+      const payload: CameraUpdatePayload = {
         name: form.name,
         location: form.location,
         ip: form.ip,
@@ -232,7 +229,7 @@ async function handleDelete(id: number): Promise<void> {
 async function loadCameras(): Promise<void> {
   loading.value = true;
   try {
-    cameras.value = await listCameras({ limit: 100 });
+    cameras.value = await listCameras({ limit: DEFAULT_LIST_LIMIT });
   } catch {
     ElMessage.error('Failed to load cameras.');
   } finally {

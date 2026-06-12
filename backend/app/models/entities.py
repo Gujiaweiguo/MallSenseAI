@@ -87,6 +87,8 @@ class Camera(Base, TimestampMixin):
     ip: Mapped[str] = mapped_column(String(64), nullable=False)
     port: Mapped[int] = mapped_column(Integer, nullable=False, default=80)
     username: Mapped[str] = mapped_column(String(128), nullable=False)
+    # NOTE: Despite the column name, this stores the plaintext camera password
+    # (needed for HTTP/RTSP auth to the camera). Not bcrypt-hashed like User.password_hash.
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[CameraStatus] = mapped_column(Enum(CameraStatus, name="camera_status"), nullable=False, default=CameraStatus.active)
 

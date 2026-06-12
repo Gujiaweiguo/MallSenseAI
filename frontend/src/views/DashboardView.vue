@@ -137,6 +137,7 @@ import {
 
 import { getDashboardStats, listAlerts } from '@/api/resources';
 import type { Alert, AlertSeverity, AlertStatus, DashboardStats } from '@/api/types';
+import { RECENT_ALERTS_COUNT } from '@/utils/constants';
 
 const FALLBACK_STATS: DashboardStats = {
   cameras_total: 0,
@@ -206,7 +207,7 @@ onMounted(async () => {
   try {
     const [statsData, alertsData] = await Promise.all([
       getDashboardStats(),
-      listAlerts({ limit: 5 }),
+      listAlerts({ limit: RECENT_ALERTS_COUNT }),
     ]);
     stats.value = statsData;
     recentAlerts.value = alertsData;

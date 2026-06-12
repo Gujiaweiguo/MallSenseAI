@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -163,6 +163,7 @@ class DahuaCameraAdapter(CameraAdapter):
                 else:
                     self._record_failure()
         except Exception:
+            logger.warning("Capture attempt failed", exc_info=True)
             self._record_failure()
         return self._health
 

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from dataclasses import asdict
 
 from backend.app.db.migrate_legacy import FullMigrationReport, MigrationReport, migrate_all
+
+logger = logging.getLogger(__name__)
 
 
 def _format_step(name: str, report: MigrationReport) -> str:
@@ -41,7 +44,7 @@ def main() -> None:
     dry_run = not args.real_run
     if args.dry_run:
         dry_run = True
-    print(format_report(migrate_all(dry_run=dry_run)))
+    logging.info(format_report(migrate_all(dry_run=dry_run)))
 
 
 if __name__ == "__main__":

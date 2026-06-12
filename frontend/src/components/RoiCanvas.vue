@@ -146,7 +146,7 @@ function drawLabel(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, roi
 function redraw(): void {
   const canvas = canvasRef.value;
   const ctx = canvas?.getContext('2d');
-  if (canvas === null || ctx === null || ctx === undefined) {
+  if (!canvas || !ctx) {
     return;
   }
 

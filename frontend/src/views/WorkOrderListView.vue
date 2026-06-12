@@ -81,6 +81,8 @@ import {
   listUsers,
 } from '@/api/resources';
 import type { User, WorkOrder } from '@/api/types';
+import { workOrderStatusTagType } from '@/utils/tagType';
+import { DEFAULT_LIST_LIMIT, USER_SELECT_LIMIT } from '@/utils/constants';
 
 const workOrders = ref<WorkOrder[]>([]);
 const users = ref<User[]>([]);
@@ -112,23 +114,12 @@ const pagedWorkOrders = computed(() => {
   return filteredWorkOrders.value.slice(start, start + pageSize.value);
 });
 
-function statusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
-  if (status === 'closed') {
-    return 'success';
-  }
-  if (status === 'in_progress') {
-    return 'warning';
-  }
-  if (status === 'open') {
-    return 'info';
-  }
-  return 'danger';
-}
+const statusType = workOrderStatusTagType;
 
 async function loadWorkOrders(): Promise<void> {
   loading.value = true;
   try {
-    workOrders.value = await listWorkOrders({ limit: 100 });
+    workOrders.value = await listWorkOrders({ limit: DEFAULT_LIST_LIMIT });
   } catch {
     ElMessage.error('Failed to load work orders.');
   } finally {
@@ -138,7 +129,7 @@ async function loadWorkOrders(): Promise<void> {
 
 async function loadUsers(): Promise<void> {
   try {
-    users.value = await listUsers({ limit: 200 });
+    users.value = await listUsers({ limit: USER_SELECT_LIMIT });
   } catch {
     // Silently fail — names will fall back to ID display
   }

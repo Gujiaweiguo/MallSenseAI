@@ -135,7 +135,7 @@ class DebrisDetector(BaseDetector):
         try:
             image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         except Exception:
-            logger.warning("DebrisDetector: failed to decode image bytes")
+            logger.warning("DebrisDetector: failed to decode image bytes", exc_info=True)
             return []
 
         img_w, img_h = image.size

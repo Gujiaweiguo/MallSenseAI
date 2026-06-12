@@ -112,6 +112,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { createUser, deleteUser, listUsers, updateUser } from '@/api/resources';
 import type { User, UserCreatePayload, UserUpdatePayload, UserRole } from '@/api/types';
 import { useAuthStore } from '@/auth/store';
+import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
 const auth = useAuthStore();
 
@@ -237,7 +238,7 @@ async function handleDelete(id: number): Promise<void> {
 async function loadUsers(): Promise<void> {
   loading.value = true;
   try {
-    users.value = await listUsers({ limit: 100 });
+    users.value = await listUsers({ limit: DEFAULT_LIST_LIMIT });
   } catch {
     ElMessage.error('Failed to load users.');
   } finally {

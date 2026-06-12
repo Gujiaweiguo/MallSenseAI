@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from backend.app.camera.adapter import CameraCaptureError, CameraHealth, HealthStatus
@@ -95,6 +95,7 @@ class CaptureService:
             )
 
         # 2. Perform real capture
+        camera._plain_password = camera.password_hash
         adapter = self._registry.get_adapter(camera, timeout=self._timeout)
         # Attach plain password so the adapter can authenticate.
         # The service layer is responsible for decryption before calling us.

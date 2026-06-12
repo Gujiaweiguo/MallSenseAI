@@ -7,7 +7,7 @@ export interface LoginRequest {
 
 export interface TokenResponse {
   access_token: string;
-  token_type: 'bearer' | string;
+  token_type: 'bearer';
 }
 
 export interface AuthUser {

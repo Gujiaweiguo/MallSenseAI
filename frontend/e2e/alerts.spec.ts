@@ -13,7 +13,7 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
       rule_id: null,
       alert_type: 'obstruction',
       severity: 'critical',
-      status: 'pending',
+      status: 'new',
       evidence_image_path: null,
       detected_at: '2026-01-01T01:00:00Z',
       resolved_at: null,
@@ -59,7 +59,7 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
   await page.goto('/alerts');
   await expect(page.locator('.el-table')).toContainText('obstruction');
   await expect(page.locator('.el-table')).toContainText('critical');
-  await expect(page.locator('.el-table')).toContainText('pending');
+  await expect(page.locator('.el-table')).toContainText('new');
   await expect(page.locator('.el-table')).toContainText('object_count');
   await expect(page.locator('.el-table')).toContainText('resolved');
 

@@ -234,9 +234,8 @@ async function confirmDeleteRule(rule: Rule): Promise<void> {
       resetForm();
     }
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      ElMessage.error('Failed to delete rule.');
-    }
+    if (error === 'cancel') return;
+    ElMessage.error('Failed to delete rule.');
   }
 }
 

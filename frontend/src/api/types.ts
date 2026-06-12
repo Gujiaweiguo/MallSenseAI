@@ -1,8 +1,8 @@
-export type CameraStatus = 'active' | 'inactive' | 'maintenance' | string;
-export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical' | string;
-export type AlertStatus = 'new' | 'confirmed' | 'false_positive' | 'resolved' | string;
-export type RuleType = 'passable_zone' | 'forbidden_zone' | 'object_count' | string;
-export type WorkOrderStatus = 'open' | 'in_progress' | 'closed' | string;
+export type CameraStatus = 'active' | 'inactive' | 'maintenance';
+export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AlertStatus = 'new' | 'confirmed' | 'false_positive' | 'resolved';
+export type RuleType = 'passable_zone' | 'forbidden_zone' | 'object_count';
+export type WorkOrderStatus = 'open' | 'in_progress' | 'closed';
 export type UserRole = 'admin' | 'operator' | 'viewer';
 
 export interface PaginatedQuery {
@@ -16,6 +16,7 @@ export interface Camera {
   location: string;
   ip: string;
   port: number;
+  username?: string;
   status: CameraStatus;
   created_at: string;
   updated_at: string;

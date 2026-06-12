@@ -63,6 +63,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 
 import { createScene, listScenes } from '@/api/resources';
 import type { Scene } from '@/api/types';
+import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
 const scenes = ref<Scene[]>([]);
 const loading = ref(false);
@@ -112,7 +113,7 @@ async function handleCreate(): Promise<void> {
 async function loadScenes(): Promise<void> {
   loading.value = true;
   try {
-    scenes.value = await listScenes({ limit: 100 });
+    scenes.value = await listScenes({ limit: DEFAULT_LIST_LIMIT });
   } catch {
     ElMessage.error('Failed to load scenes.');
   } finally {
