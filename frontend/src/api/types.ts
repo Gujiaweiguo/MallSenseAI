@@ -1,0 +1,136 @@
+export type CameraStatus = 'active' | 'inactive' | 'maintenance' | string;
+export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical' | string;
+export type AlertStatus = 'new' | 'confirmed' | 'false_positive' | 'resolved' | string;
+export type RuleType = 'passable_zone' | 'forbidden_zone' | 'object_count' | string;
+export type WorkOrderStatus = 'open' | 'in_progress' | 'closed' | string;
+export type UserRole = 'admin' | 'operator' | 'viewer';
+
+export interface PaginatedQuery {
+  skip?: number;
+  limit?: number;
+}
+
+export interface Camera {
+  id: number;
+  name: string;
+  location: string;
+  ip: string;
+  port: number;
+  status: CameraStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CameraCreatePayload {
+  name: string;
+  location: string;
+  ip: string;
+  port: number;
+  username: string;
+  password: string;
+  status: CameraStatus;
+}
+
+export interface CameraUpdatePayload {
+  name?: string;
+  location?: string;
+  ip?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  status?: CameraStatus;
+}
+
+export interface Alert {
+  id: number;
+  camera_id: number;
+  roi_id: number | null;
+  rule_id: number | null;
+  alert_type: RuleType;
+  severity: AlertSeverity;
+  status: AlertStatus;
+  evidence_image_path: string | null;
+  detected_at: string;
+  resolved_at: string | null;
+  event_metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkOrder {
+  id: number;
+  alert_id: number;
+  assigned_to: number | null;
+  status: WorkOrderStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Scene {
+  id: number;
+  camera_id: number;
+  name: string;
+  baseline_image_path: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type RoiGeometry = {
+  type: 'polygon';
+  points: Array<[number, number]>;
+};
+
+export interface Roi {
+  id: number;
+  scene_id: number;
+  name: string;
+  geometry: RoiGeometry;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoiCreatePayload {
+  name: string;
+  geometry: RoiGeometry;
+}
+
+export interface RuleThresholdConfig {
+  threshold?: number;
+  min_area?: number;
+  max_count?: number;
+  duration_seconds?: number;
+}
+
+export interface Rule {
+  id: number;
+  camera_id: number;
+  roi_id: number | null;
+  rule_type: RuleType;
+  threshold_config: RuleThresholdConfig;
+  priority: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RuleCreatePayload {
+  camera_id: number;
+  roi_id: number | null;
+  rule_type: RuleType;
+  threshold_config: RuleThresholdConfig;
+  priority: number;
+  enabled: boolean;
+}
+
+export type RuleUpdatePayload = Partial<Omit<RuleCreatePayload, 'camera_id'>>;
+
+export interface User {
+  id: number;
+  username: string;
+  display_name: string;
+  role: UserRole;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
