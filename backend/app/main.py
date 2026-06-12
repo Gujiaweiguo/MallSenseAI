@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.app.api import alert_workflow, alerts, cameras, dashboard, rois, rules, scenes, users, work_orders
+from backend.app.alerts.ws import router as ws_router
 from backend.app.auth.router import router as auth_router
 from backend.app.core.config import get_settings
 
@@ -18,6 +19,8 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     from backend.app.notifications.router import start_notification_router, stop_notification_router
     from backend.app.notifications.service import NotificationService
+    from backend.app.alerts.ws import ws_manager
+    from backend.app.alerts.events import event_bus
     from backend.app.db.session import SessionLocal
 
     try:
@@ -25,7 +28,9 @@ async def lifespan(app: FastAPI):
         start_notification_router(service)
     except Exception:
         pass
+    ws_manager.start(event_bus)
     yield
+    ws_manager.stop(event_bus)
     stop_notification_router()
 
 
@@ -61,6 +66,7 @@ def health_check() -> dict[str, str]:
 
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(ws_router, prefix="/api")
 app.include_router(cameras.router, prefix="/api")
 app.include_router(scenes.router, prefix="/api")
 app.include_router(rois.router, prefix="/api")

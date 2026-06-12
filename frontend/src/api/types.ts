@@ -1,6 +1,7 @@
 export type CameraStatus = 'active' | 'inactive' | 'maintenance';
 export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type AlertStatus = 'new' | 'confirmed' | 'false_positive' | 'resolved';
+export type AlertEventType = 'created' | 'confirmed' | 'resolved' | 'false_positive' | 'escalated';
 export type RuleType = 'passable_zone' | 'forbidden_zone' | 'object_count';
 export type WorkOrderStatus = 'open' | 'in_progress' | 'closed';
 export type UserRole = 'admin' | 'operator' | 'viewer';
@@ -173,4 +174,13 @@ export interface DashboardStats {
   work_orders_open: number;
   work_orders_in_progress: number;
   work_orders_closed: number;
+}
+
+export interface AlertEvent {
+  event_type: AlertEventType;
+  alert_id: number;
+  camera_id: number;
+  severity: AlertSeverity;
+  timestamp: string;
+  metadata: Record<string, unknown>;
 }

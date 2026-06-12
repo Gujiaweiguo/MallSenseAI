@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import {
   listAlerts,
@@ -86,6 +86,7 @@ import {
 } from '@/api/resources';
 import type { Alert } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
+import { useAlertEvents } from '@/composables/useAlertEvents';
 
 const alerts = ref<Alert[]>([]);
 const loading = ref(false);
@@ -94,6 +95,7 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const severityFilter = ref('');
 const statusFilter = ref('');
+const alertWs = useAlertEvents();
 
 const filteredAlerts = computed(() => {
   let result = alerts.value;
@@ -200,6 +202,23 @@ async function handleResolve(id: number): Promise<void> {
     acting.value = null;
   }
 }
+
+watch(() => alertWs.lastEvent.value, (event) => {
+  if (!event) return;
+  if (event.event_type === 'created') {
+    void loadAlerts();
+  } else if (
+    event.event_type === 'confirmed' ||
+    event.event_type === 'resolved' ||
+    event.event_type === 'false_positive' ||
+    event.event_type === 'escalated'
+  ) {
+    const idx = alerts.value.findIndex((a) => a.id === event.alert_id);
+    if (idx !== -1) {
+      void loadAlerts();
+    }
+  }
+});
 
 onMounted(() => {
   void loadAlerts();

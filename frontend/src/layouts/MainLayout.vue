@@ -61,14 +61,16 @@
 
 <script setup lang="ts">
 import { DataBoard, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/auth/store';
+import { useAlertEvents } from '@/composables/useAlertEvents';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const alertWs = useAlertEvents();
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/cameras')) {
@@ -78,9 +80,20 @@ const activeMenu = computed(() => {
 });
 
 function handleLogout(): void {
+  alertWs.disconnect();
   auth.logout();
   void router.replace('/login');
 }
+
+onMounted(() => {
+  if (auth.isAuthenticated) {
+    alertWs.connect();
+  }
+});
+
+onUnmounted(() => {
+  alertWs.disconnect();
+});
 </script>
 
 <style scoped>
