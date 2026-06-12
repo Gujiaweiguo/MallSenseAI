@@ -76,6 +76,11 @@ export interface Scene {
   updated_at: string;
 }
 
+export interface SceneCreatePayload {
+  camera_id: number;
+  name: string;
+}
+
 export type RoiGeometry = {
   type: 'polygon';
   points: Array<[number, number]>;
@@ -125,6 +130,22 @@ export interface RuleCreatePayload {
 
 export type RuleUpdatePayload = Partial<Omit<RuleCreatePayload, 'camera_id'>>;
 
+export interface UserCreatePayload {
+  username: string;
+  display_name: string;
+  password: string;
+  role?: UserRole;
+  enabled?: boolean;
+}
+
+export interface UserUpdatePayload {
+  username?: string;
+  display_name?: string;
+  password?: string;
+  role?: UserRole;
+  enabled?: boolean;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -133,4 +154,22 @@ export interface User {
   enabled: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface DashboardStats {
+  cameras_total: number;
+  cameras_active: number;
+  cameras_inactive: number;
+  cameras_error: number;
+  scenes_total: number;
+  alerts_total: number;
+  alerts_pending: number;
+  alerts_confirmed: number;
+  alerts_false_positive: number;
+  alerts_resolved: number;
+  alerts_by_severity: Record<string, number>;
+  work_orders_total: number;
+  work_orders_open: number;
+  work_orders_in_progress: number;
+  work_orders_closed: number;
 }

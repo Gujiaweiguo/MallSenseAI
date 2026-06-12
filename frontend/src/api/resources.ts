@@ -1,6 +1,7 @@
 import client from './client';
 import type {
   Alert,
+  DashboardStats,
   PaginatedQuery,
   Roi,
   RoiCreatePayload,
@@ -8,9 +9,17 @@ import type {
   RuleCreatePayload,
   RuleUpdatePayload,
   Scene,
+  SceneCreatePayload,
   User,
+  UserCreatePayload,
+  UserUpdatePayload,
   WorkOrder,
 } from './types';
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const response = await client.get<DashboardStats>('/dashboard/stats');
+  return response.data;
+}
 
 export async function listAlerts(params: PaginatedQuery = {}): Promise<Alert[]> {
   const response = await client.get<Alert[]>('/alerts', { params });
@@ -32,6 +41,11 @@ export async function listScenes(cameraIdOrParams: number | PaginatedQuery = {})
 
 export async function getScene(sceneId: number): Promise<Scene> {
   const response = await client.get<Scene>(`/scenes/${sceneId}`);
+  return response.data;
+}
+
+export async function createScene(data: SceneCreatePayload): Promise<Scene> {
+  const response = await client.post<Scene>('/scenes', data);
   return response.data;
 }
 
@@ -90,4 +104,43 @@ export async function listUsers(params: PaginatedQuery = {}): Promise<User[]> {
 export async function getUser(id: number): Promise<User> {
   const response = await client.get<User>(`/users/${id}`);
   return response.data;
+}
+
+export async function createUser(data: UserCreatePayload): Promise<User> {
+  const response = await client.post<User>('/users', data);
+  return response.data;
+}
+
+export async function updateUser(id: number, data: UserUpdatePayload): Promise<User> {
+  const response = await client.put<User>(`/users/${id}`, data);
+  return response.data;
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  await client.delete(`/users/${id}`);
+}
+
+export async function confirmAlert(id: number): Promise<Alert> {
+  const { data } = await client.post<Alert>(`/alerts/${id}/confirm`);
+  return data;
+}
+
+export async function markAlertFalsePositive(id: number, reason?: string): Promise<Alert> {
+  const { data } = await client.post<Alert>(`/alerts/${id}/false-positive`, { reason });
+  return data;
+}
+
+export async function resolveAlert(id: number, notes?: string): Promise<Alert> {
+  const { data } = await client.post<Alert>(`/alerts/${id}/resolve`, { notes });
+  return data;
+}
+
+export async function transitionWorkOrder(id: number, body: { target: string; notes?: string }): Promise<WorkOrder> {
+  const { data } = await client.post<WorkOrder>(`/work-orders/${id}/transition`, body);
+  return data;
+}
+
+export async function assignWorkOrder(id: number, body: { user_id: number }): Promise<WorkOrder> {
+  const { data } = await client.post<WorkOrder>(`/work-orders/${id}/assign`, body);
+  return data;
 }
