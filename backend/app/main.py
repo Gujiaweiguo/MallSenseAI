@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +13,23 @@ from backend.app.core.config import get_settings
 
 settings = get_settings()
 
-app = FastAPI(title="MallSenseAI Management API", docs_url="/docs", redoc_url="/redoc")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from backend.app.notifications.router import start_notification_router, stop_notification_router
+    from backend.app.notifications.service import NotificationService
+    from backend.app.db.session import SessionLocal
+
+    try:
+        service = NotificationService(SessionLocal)
+        start_notification_router(service)
+    except Exception:
+        pass
+    yield
+    stop_notification_router()
+
+
+app = FastAPI(title="MallSenseAI Management API", docs_url="/docs", redoc_url="/redoc", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
