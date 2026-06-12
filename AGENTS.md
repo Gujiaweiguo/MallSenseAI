@@ -155,5 +155,50 @@ MallSenseAI/
 
 ## Git conventions
 - Main branch: `main`, remote: `git@github.com:Gujiaweiguo/MallSenseAI.git`
-- Commit messages follow conventional commits: `feat:`, `fix:`, `test:`, `ci:`, `chore:`
+- Commit messages follow conventional commits: `feat:`, `fix:`, `test:`, `ci:`, `chore:`, `docs:`
 - No pre-commit hooks; CI validates on push
+
+## Change 归档验证规则
+
+### 1 人开发工作流
+
+- 直接推 `main` 分支，不做 feature branch + PR review
+- CI（GitHub Actions）是唯一的自动 reviewer — 推送后必须 CI 绿灯才算完成
+- 使用 conventional commits 描述变更意图，commit message 即变更记录
+- OpenSpec archive 文件是功能完成的正式标记
+
+### 测试分级标准（按变更类型）
+
+| 变更类型 | 单元测试 | 集成测试(API) | E2E 测试 | 示例 |
+|----------|---------|-------------|---------|------|
+| 纯后端逻辑 | ✅ 必须 | 视影响范围 | — | ROI 引擎、规则引擎、检测器 |
+| 后端新端点 | ✅ 必须 | ✅ 必须 | — | 新增 API router、修改 CRUD |
+| 前端 UI 变更 | — | — | ✅ 必须 | 新视图、组件修改、交互逻辑 |
+| 全栈变更 | ✅ 必须 | ✅ 必须 | ✅ 必须 | 前后端都改的 alert/work-order 流程 |
+| Workers/基础设施 | ✅ 必须 | 视影响范围 | — | scheduler、executor、metrics |
+| 文档/配置 | — | — | — | AGENTS.md、.env、docker-compose |
+
+### 归档前验证清单（必须全部 ✅）
+
+```
+□ 1. 受影响模块有对应测试文件（新增模块必须有新测试）
+□ 2. 新功能有新测试用例覆盖（不只是修改旧测试）
+□ 3. python3 -m pytest backend/tests/ -q — 全部通过，零失败
+□ 4. cd frontend && npx vue-tsc --noEmit — 零 TypeScript 错误
+□ 5. cd frontend && npm run build — 构建成功
+□ 6. 如有前端变更：cd frontend && npx playwright test — 全部通过
+□ 7. 没有引入新的 type: any / @ts-ignore / bare except / as any
+```
+
+### CI 当前覆盖
+
+| Job | 检查内容 | 运行时机 |
+|-----|---------|---------|
+| backend | `pytest backend/tests/` | 每次 push/PR 到 main |
+| frontend | `vue-tsc --noEmit` + `vite build` | 每次 push/PR 到 main |
+
+### 当前测试覆盖盲区（已知）
+
+- Workers（scheduler、executor、metrics）零测试 — 下个 change 应补齐
+- 后端测试用 SQLite，生产用 PostgreSQL+pgvector — 无集成测试
+- Playwright e2e 测试未加入 CI — 仅本地运行
