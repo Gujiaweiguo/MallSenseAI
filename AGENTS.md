@@ -46,13 +46,14 @@ MallSenseAI/
 │   ├── coordinate_standard.py  # Point types, pixel↔normalized coordinate conversion
 │   └── asset_paths.py          # Canonical path templates for baselines, evidence, ROI snapshots
 ├── legacy/               # Legacy isolation plan (README only, files not yet moved)
-├── scripts/              # isolate_legacy.sh — idempotent legacy file copier
+├── scripts/              # Deployment scripts (install/uninstall/start/stop/update/status)
+├── deploy/               # Deployment config template (mallsenseai.env.example)
 ├── docs/migration/       # cutover.md — full migration & cutover procedure
 ├── openspec/             # 7 archived changes + main specs
 ├── data/assets/cameras/  # New platform asset storage
 ├── alarm_images/         # Legacy camera data (shared during migration)
 ├── .github/workflows/    # CI: backend pytest + frontend vue-tsc + vite build
-├── docker-compose.dev.yml # Reference compose for shared PostgreSQL 16 + Redis 7
+├── docker-compose.dev.yml # Dev infrastructure — PostgreSQL 16 + pgvector only
 └── [legacy .py files]    # main.py, web_server.py, camera_manager.py, alarm_system.py, etc.
 ```
 
@@ -157,6 +158,75 @@ MallSenseAI/
 - Main branch: `main`, remote: `git@github.com:Gujiaweiguo/MallSenseAI.git`
 - Commit messages follow conventional commits: `feat:`, `fix:`, `test:`, `ci:`, `chore:`, `docs:`
 - No pre-commit hooks; CI validates on push
+
+## 部署架构
+
+### 环境区分
+
+| | 开发环境 | 生产环境 |
+|---|---------|---------|
+| 后端 | 本地 uvicorn (`python3 -m uvicorn`) | Docker 容器 |
+| 前端 | Vite dev server (`npm run dev`) | nginx 静态托管 |
+| Worker | 本地 `python3 -m workers.run` | Docker 容器 |
+| 数据库 | docker-compose.dev.yml (PG 容器) | docker-compose.yml (PG 容器，持久卷) |
+| 反向代理 | Vite proxy (`/api` → `:5380`) | nginx (`/api` → `backend:5380`) |
+
+### 生产 Docker 架构（4 服务）
+
+```
+nginx:alpine ─── :80 → /usr/share/nginx/html (Vue SPA)
+                     → /api/* proxy_pass → backend:5380
+                     → /docs, /redoc proxy_pass → backend:5380
+
+mallsenseai-app ─── backend: uvicorn on :5380
+                  └── worker: python -m workers.run
+
+pgvector/pgvector:pg16 ─── postgres:5432 (内部网络)
+```
+
+- 单一 Dockerfile，backend 和 worker 共享镜像，不同 `command`
+- 所有服务在 `internal` Docker 网络中，仅 nginx 暴露端口
+- 非 root 用户运行（appuser, uid 999）
+
+### 目录布局
+
+| 路径 | 用途 | 所有者 |
+|------|------|--------|
+| `/opt/module/mallsenseai/` | 应用文件（代码、Dockerfile、compose） | root |
+| `/opt/software/mallsenseai/` | 配置文件 (`mallsenseai.env`) | root, chmod 600 |
+| `/var/lib/mallsenseai/` | 持久数据（postgres、assets） | root |
+
+### 配置文件
+
+`/opt/software/mallsenseai/mallsenseai.env` — 基于 `deploy/mallsenseai.env.example`，安装时自动生成随机密钥：
+- `HOST_PORT`: nginx 监听端口（默认 80）
+- `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`: 数据库连接
+- `SECRET_KEY`: JWT 签名密钥（自动生成）
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: JWT 过期时间（默认 480 分钟）
+- `DATA_DIR`: 持久数据根目录（默认 `/var/lib/mallsenseai`）
+- 报警参数：`ALARM_INTERVAL_MINUTES`、`ALARM_THRESHOLD` 等
+
+### 部署脚本
+
+| 脚本 | 用途 | 运行位置 |
+|------|------|---------|
+| `scripts/install.sh [INSTALL_DIR]` | 全新安装：创建目录→复制文件→构建镜像→启动→迁移→种子用户 | 源码目录 |
+| `scripts/uninstall.sh [INSTALL_DIR]` | 停止容器→删除镜像→删除应用文件（保留配置和数据） | 任意位置 |
+| `scripts/start.sh` | 启动所有服务并等待健康检查通过 | 安装目录 |
+| `scripts/stop.sh` | 停止所有服务（数据保留） | 安装目录 |
+| `scripts/update.sh [INSTALL_DIR]` | 备份DB→更新文件→重建镜像→重启→迁移→健康检查 | 源码目录 |
+| `scripts/status.sh` | 显示服务状态、健康检查、磁盘用量 | 安装目录 |
+
+### 关键文件
+
+| 文件 | 用途 |
+|------|------|
+| `Dockerfile` | uv 多阶段构建，Python 3.10，非 root 运行 |
+| `docker-compose.yml` | 生产编排：nginx + backend + worker + postgres |
+| `docker-compose.dev.yml` | 开发基础设施：仅 PostgreSQL（后端/前端在本地运行） |
+| `nginx.conf` | Vue SPA 路由 + `/api` 反向代理 + gzip + 安全头 |
+| `.dockerignore` | 排除 `.git`、`node_modules`、`alarm_images`、`*.pt` 等 |
+| `deploy/mallsenseai.env.example` | 配置模板，安装脚本复制到 `/opt/software/mallsenseai/` |
 
 ## Change 归档验证规则
 
