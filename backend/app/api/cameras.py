@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from backend.app.auth.dependencies import get_current_user, require_role
-from backend.app.auth.password import hash_password
 from backend.app.api.utils import Camera, commit_refresh, get_or_404, paginate, select, set_if_provided
 from backend.app.db.session import get_db
 from backend.app.models import UserRole
@@ -26,7 +25,7 @@ def get_camera(camera_id: int, db: Session = Depends(get_db)) -> Camera:
 @router.post("", response_model=CameraResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_role(UserRole.operator))])
 def create_camera(payload: CameraCreate, db: Session = Depends(get_db)) -> Camera:
     data = payload.model_dump(exclude={"password"})
-    camera = Camera(**data, password_hash=hash_password(payload.password))
+    camera = Camera(**data, password_hash=payload.password)
     db.add(camera)
     return commit_refresh(db, camera)
 
@@ -37,7 +36,7 @@ def update_camera(camera_id: int, payload: CameraUpdate, db: Session = Depends(g
     data = payload.model_dump(exclude_unset=True, exclude={"password"})
     set_if_provided(camera, data)
     if payload.password is not None:
-        camera.password_hash = hash_password(payload.password)
+        camera.password_hash = payload.password
     return commit_refresh(db, camera)
 
 

@@ -11,7 +11,6 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.auth.password import hash_password
 from backend.app.core.config import get_settings
 from backend.app.db.session import SessionLocal, engine
 from backend.app.models import (
@@ -229,12 +228,7 @@ def migrate_cameras(dry_run: bool = False) -> MigrationReport:
                     report.skipped += 1
                     report.add(f"invalid_camera_missing_password ip={ip} port={port}")
                     continue
-                try:
-                    password_hash = "<dry-run>" if dry_run else hash_password(password)
-                except Exception as exc:  # pragma: no cover - passlib backend failure only
-                    report.skipped += 1
-                    report.add(f"password_hash_failed ip={ip} port={port} error={exc.__class__.__name__}")
-                    continue
+                password_hash = "<dry-run>" if dry_run else password
                 report.inserted += 1
                 report.add(f"camera_insert ip={ip} port={port} location={location!r} password_present=true")
                 if not dry_run:
