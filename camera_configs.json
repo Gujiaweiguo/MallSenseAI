@@ -1,0 +1,149 @@
+[
+  {
+    "ip": "10.25.4.59",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "L4009B铺后通道"
+  },
+  {
+    "ip": "10.25.4.50",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "L4021A铺后通道"
+  },
+  {
+    "ip": "10.25.4.40",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "L4016铺后通道"
+  },
+  {
+    "ip": "10.25.4.6",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层影城旁通道"
+  },
+  {
+    "ip": "10.25.4.76",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4038铺旁4号消防梯"
+  },
+  {
+    "ip": "10.25.4.66",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4035铺后通道"
+  },
+  {
+    "ip": "10.25.4.7",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4013后通道1号消防梯"
+  },
+  {
+    "ip": "10.25.4.125",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4014铺旁通道"
+  },
+  {
+    "ip": "10.25.4.117",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4021B铺外围"
+  },
+  {
+    "ip": "10.25.4.60",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4009B铺后通道2"
+  },
+  {
+    "ip": "10.25.4.83",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4004B铺旁通道2"
+  },
+  {
+    "ip": "10.25.4.41",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4018铺后通道"
+  },
+  {
+    "ip": "10.25.4.47",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4021A-H18H19货梯厅"
+  },
+  {
+    "ip": "10.25.4.27",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4022铺旁"
+  },
+  {
+    "ip": "10.25.4.96",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4001铺旁11号货梯厅"
+  },
+  {
+    "ip": "10.25.4.128",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4014铺旁通道"
+  },
+  {
+    "ip": "10.25.4.119",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4021B铺内通道"
+  },
+  {
+    "ip": "10.25.4.111",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4007铺旁通道"
+  },
+  {
+    "ip": "10.25.4.129",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4014铺旁通道3"
+  },
+  {
+    "ip": "10.25.4.97",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层西山4001铺旁通道3"
+  },
+  {
+    "ip": "10.25.4.65",
+    "port": 80,
+    "username": "admin",
+    "password": "admin123",
+    "location": "4层东山4035铺后通道1"
+  }
+]
