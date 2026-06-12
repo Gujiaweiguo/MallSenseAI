@@ -6,6 +6,7 @@ import asyncio
 import logging
 import time
 from contextlib import suppress
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 
@@ -16,6 +17,9 @@ from backend.app.models.entities import Camera, CameraStatus
 from workers.executor import BatchExecutor
 from workers.metrics import WorkerMetricsCollector
 from workers.models import ScheduledCamera, WorkerStatus
+
+if TYPE_CHECKING:
+    from workers.pipeline import DetectionPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,7 @@ class InspectionScheduler:
         settings: Settings | None = None,
         executor: BatchExecutor | None = None,
         metrics: WorkerMetricsCollector | None = None,
+        pipeline: DetectionPipeline | None = None,
         max_concurrency: int = 10,
         sync_interval_seconds: float = 60.0,
         tick_seconds: float = 1.0,
@@ -38,6 +43,7 @@ class InspectionScheduler:
         self._settings: Settings = settings or get_settings()
         self._executor: BatchExecutor = executor or BatchExecutor()
         self.metrics: WorkerMetricsCollector = metrics or WorkerMetricsCollector()
+        self._pipeline: DetectionPipeline | None = pipeline
         self._max_concurrency: int = max_concurrency
         self._sync_interval_seconds: float = sync_interval_seconds
         self._tick_seconds: float = tick_seconds
@@ -154,6 +160,21 @@ class InspectionScheduler:
         now = time.monotonic()
         for result in results:
             await self.metrics.record_inspection(result)
+            if self._pipeline is not None and result.success:
+                try:
+                    outcome = await self._pipeline.process_inspection(result)
+                    if outcome.alerts_created > 0:
+                        logger.info(
+                            "Pipeline: camera=%d detections=%d/%d alerts=%d",
+                            outcome.camera_id,
+                            outcome.obstruction_detections,
+                            outcome.fire_smoke_detections,
+                            outcome.alerts_created,
+                        )
+                except Exception:
+                    logger.exception(
+                        "Detection pipeline failed for camera %s", result.camera_id
+                    )
             scheduled = self._scheduled.get(result.camera_id)
             if scheduled is None:
                 continue
