@@ -1,34 +1,16 @@
-services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: mallsenseai-postgres-dev
-    environment:
-      POSTGRES_DB: mallsenseai
-      POSTGRES_USER: mallsenseai
-      POSTGRES_PASSWORD: mallsenseai
-    ports:
-      - "5432:5432"
-    volumes:
-      - mallsenseai-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mallsenseai -d mallsenseai"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: mallsenseai-redis-dev
-    ports:
-      - "6379:6379"
-    volumes:
-      - mallsenseai-redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  mallsenseai-postgres-data:
-  mallsenseai-redis-data:
+# MallSenseAI development dependencies
+#
+# This file is for REFERENCE ONLY. The local dev environment reuses the shared
+# PostgreSQL (docker-postgres-1, pgvector/pgvector:pg16, port 5432) and Redis
+# (redis-dev, redis:7-alpine, port 6379) containers that are already running.
+#
+# To set up the database:
+#   1. Create the database: docker exec docker-postgres-1 psql -U langchat -d langchat -c "CREATE DATABASE mallsenseai;"
+#   2. Enable pgvector:     docker exec docker-postgres-1 psql -U langchat -d mallsenseai -c "CREATE EXTENSION IF NOT EXISTS vector;"
+#   3. Create schema:        python3 -c "from backend.app.db.session import engine; from backend.app.models import Base; Base.metadata.create_all(bind=engine)"
+#   4. Seed admin:           python3 -c "from backend.app.db.seed import seed_all; seed_all()"
+#   5. Migrate legacy data:  python3 backend/app/db/run_migration.py --real-run
+#
+# Connection info (matches .env.example):
+#   PostgreSQL: postgresql+psycopg2://langchat:langchat@localhost:5432/mallsenseai
+#   Redis:      redis://localhost:6379/0
