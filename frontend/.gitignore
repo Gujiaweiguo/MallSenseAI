@@ -3,3 +3,5 @@ dist/
 *.local
 coverage/
 tsconfig.tsbuildinfo
+test-results/
+playwright-report/
