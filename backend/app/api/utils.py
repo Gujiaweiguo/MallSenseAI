@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.models import Alert, AlertStatus, Camera, ROI, Rule, Scene, User, WorkOrder
+from backend.app.models import Alert, AlertStatus, Camera, DetectionEvent, ROI, Rule, Scene, User, WorkOrder
 
 ModelT = TypeVar("ModelT")
 
@@ -46,6 +46,7 @@ def mark_alert_resolution(alert: Alert) -> None:
 __all__ = [
     "Alert",
     "Camera",
+    "DetectionEvent",
     "ROI",
     "Rule",
     "Scene",

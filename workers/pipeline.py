@@ -17,11 +17,11 @@ from backend.app.alerts.service import AlertService
 from backend.app.db.session import SessionLocal
 from backend.app.detectors.base import DetectionResult
 from backend.app.detectors.integration import DetectorRegistry
-from backend.app.models.entities import RuleType
+from backend.app.models.entities import DetectionEvent, DetectorType, RuleType
 from backend.app.rules.cooldown import CooldownTracker
 from backend.app.rules.engine import ObstructionRuleEngine
 from backend.app.rules.models import AlertCandidate as RuleAlertCandidate
-from workers.context import CameraContextCache, CameraDetectionContext, load_camera_context
+from workers.context import CameraContextCache, CameraDetectionContext, RoiContext, load_camera_context
 from workers.models import InspectionResult
 
 logger = logging.getLogger(__name__)
@@ -88,6 +88,28 @@ class DetectionPipeline:
             evidence_path = self._save_evidence(
                 inspection.camera_id, inspection.timestamp, image_bytes
             )
+
+        try:
+            self._persist_detections(
+                camera_id=inspection.camera_id,
+                detections=obstruction,
+                detector_type=DetectorType.yolo,
+                context=context,
+                evidence_path=evidence_path,
+                captured_at=inspection.timestamp,
+                db=db,
+            )
+            self._persist_detections(
+                camera_id=inspection.camera_id,
+                detections=fire_smoke,
+                detector_type=DetectorType.yolo,
+                context=context,
+                evidence_path=evidence_path,
+                captured_at=inspection.timestamp,
+                db=db,
+            )
+        except Exception:
+            logger.exception("Detection event persistence failed for camera %d", inspection.camera_id)
 
         alerts_created = 0
 
@@ -195,3 +217,69 @@ class DetectionPipeline:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(image_bytes)
         return str(path)
+
+    @staticmethod
+    def _persist_detections(
+        camera_id: int,
+        detections: list[DetectionResult],
+        detector_type: DetectorType,
+        context: CameraDetectionContext,
+        evidence_path: str | None,
+        captured_at: datetime,
+        db: Session,
+    ) -> None:
+        roi_id_map = _build_roi_lookup(context)
+        for det in detections:
+            matched_roi_id = _match_roi(det, roi_id_map)
+            event = DetectionEvent(
+                camera_id=camera_id,
+                roi_id=matched_roi_id,
+                detector_type=detector_type,
+                confidence=det.confidence,
+                evidence_path=evidence_path,
+                event_metadata={
+                    "label": det.label,
+                    "polygon": [list(p) for p in det.polygon],
+                    **det.metadata,
+                },
+                detected_at=captured_at if captured_at.tzinfo else captured_at.replace(tzinfo=timezone.utc),
+            )
+            db.add(event)
+        if detections:
+            db.flush()
+
+
+def _build_roi_lookup(context: CameraDetectionContext) -> dict[int, list[tuple[float, float]]]:
+    return {r.roi_id: r.polygon for r in context.rois}
+
+
+def _centroid(polygon: list[tuple[float, float]]) -> tuple[float, float]:
+    n = len(polygon)
+    if n == 0:
+        return (0.0, 0.0)
+    cx = sum(p[0] for p in polygon) / n
+    cy = sum(p[1] for p in polygon) / n
+    return (cx, cy)
+
+
+def _point_in_polygon(px: float, py: float, polygon: list[tuple[float, float]]) -> bool:
+    n = len(polygon)
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i]
+        xj, yj = polygon[j]
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def _match_roi(
+    det: DetectionResult, roi_id_map: dict[int, list[tuple[float, float]]]
+) -> int | None:
+    cx, cy = _centroid(det.polygon)
+    for roi_id, polygon in roi_id_map.items():
+        if _point_in_polygon(cx, cy, polygon):
+            return roi_id
+    return None

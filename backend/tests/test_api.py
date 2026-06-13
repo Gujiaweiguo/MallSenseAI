@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from backend.app.auth.password import hash_password
 from backend.app.db.session import get_db
 from backend.app.main import app
-from backend.app.models import Base, Camera, User
+from backend.app.models import Base, Camera, DetectionEvent, DetectorType, User
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_api.db"
 
@@ -224,3 +226,104 @@ class TestDashboard:
         resp = client.get("/api/health")
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
+
+
+# ---------------------------------------------------------------------------
+# Detection Events (read-only API)
+# ---------------------------------------------------------------------------
+
+
+class TestDetectionEvents:
+    def test_list_empty(self, client: TestClient, auth_headers: dict):
+        resp = client.get("/api/detection-events", headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_list_with_events(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        db.add(
+            DetectionEvent(
+                camera_id=cam["id"],
+                roi_id=None,
+                detector_type=DetectorType.yolo,
+                confidence=0.85,
+                evidence_path=None,
+                event_metadata={"label": "bottle"},
+                detected_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/detection-events", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["detector_type"] == "yolo"
+        assert data[0]["confidence"] == 0.85
+
+    def test_get_single_event(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        event = DetectionEvent(
+            camera_id=cam["id"],
+            roi_id=None,
+            detector_type=DetectorType.yolo,
+            confidence=0.9,
+            evidence_path="/evidence.jpg",
+            event_metadata={"label": "fire"},
+            detected_at=datetime.now(timezone.utc),
+        )
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        event_id = event.id
+        db.close()
+
+        resp = client.get(f"/api/detection-events/{event_id}", headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["id"] == event_id
+        assert resp.json()["confidence"] == 0.9
+
+    def test_get_not_found(self, client: TestClient, auth_headers: dict):
+        resp = client.get("/api/detection-events/99999", headers=auth_headers)
+        assert resp.status_code == 404
+
+    def test_filter_by_camera_id(self, client: TestClient, auth_headers: dict):
+        cam1 = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        cam2_payload = {**CAMERA_PAYLOAD, "ip": "192.168.1.101", "name": "Cam 2"}
+        cam2 = client.post("/api/cameras", json=cam2_payload, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        db.add(
+            DetectionEvent(
+                camera_id=cam1["id"],
+                roi_id=None,
+                detector_type=DetectorType.yolo,
+                confidence=0.8,
+                event_metadata={},
+                detected_at=datetime.now(timezone.utc),
+            )
+        )
+        db.add(
+            DetectionEvent(
+                camera_id=cam2["id"],
+                roi_id=None,
+                detector_type=DetectorType.yolo,
+                confidence=0.7,
+                event_metadata={},
+                detected_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+        db.close()
+
+        resp = client.get(f"/api/detection-events?camera_id={cam1['id']}", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["camera_id"] == cam1["id"]
+
+    def test_requires_auth(self, client: TestClient):
+        resp = client.get("/api/detection-events")
+        assert resp.status_code == 401
