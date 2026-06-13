@@ -178,6 +178,11 @@ export async function listDetectionEvents(params?: PaginatedQuery & {
   return data;
 }
 
+export async function exportAlerts(params: { severity?: string; status?: string } = {}): Promise<Blob> {
+  const response = await client.get('/alerts/export', { params, responseType: 'blob' });
+  return response.data;
+}
+
 export async function listNotificationGroups(params?: PaginatedQuery): Promise<NotificationGroup[]> {
   const { data } = await client.get<NotificationGroup[]>('/notification-groups', { params });
   return data;

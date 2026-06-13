@@ -18,6 +18,7 @@
         <el-option label="False Positive" value="false_positive" />
         <el-option label="Resolved" value="resolved" />
       </el-select>
+      <el-button :loading="exporting" style="margin-left: auto" @click="handleExport">Export CSV</el-button>
     </div>
 
     <el-table v-loading="loading" :data="pagedAlerts" row-key="id" stripe @row-click="handleRowClick">
@@ -91,6 +92,7 @@ import {
   confirmAlert,
   markAlertFalsePositive,
   resolveAlert,
+  exportAlerts,
 } from '@/api/resources';
 import type { Alert, Camera } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
@@ -100,6 +102,7 @@ import { alertSeverityTagType, alertStatusTagType } from '@/utils/tagType';
 const alerts = ref<Alert[]>([]);
 const cameras = ref<Camera[]>([]);
 const loading = ref(false);
+const exporting = ref(false);
 const acting = ref<number | null>(null);
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -161,6 +164,27 @@ async function loadAlerts(): Promise<void> {
     ElMessage.error('Failed to load alerts.');
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleExport(): Promise<void> {
+  exporting.value = true;
+  try {
+    const blob = await exportAlerts({
+      severity: severityFilter.value || undefined,
+      status: statusFilter.value || undefined,
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'alerts.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    ElMessage.success('CSV exported.');
+  } catch {
+    ElMessage.error('Failed to export alerts.');
+  } finally {
+    exporting.value = false;
   }
 }
 
