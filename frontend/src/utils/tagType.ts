@@ -12,6 +12,7 @@ const WORK_ORDER_STATUS_MAP: Record<WorkOrderStatus, TagType> = {
   open: 'warning',
   in_progress: '',
   closed: 'info',
+  cancelled: 'danger',
 };
 
 const ALERT_SEVERITY_MAP: Record<AlertSeverity, TagType> = {
@@ -24,7 +25,7 @@ const ALERT_SEVERITY_MAP: Record<AlertSeverity, TagType> = {
 const ALERT_STATUS_MAP: Record<AlertStatus, TagType> = {
   resolved: 'success',
   confirmed: 'warning',
-  new: 'info',
+  pending: 'info',
   false_positive: 'danger',
 };
 

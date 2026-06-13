@@ -13,7 +13,7 @@
       </el-select>
       <el-select v-model="statusFilter" placeholder="Status" clearable style="width: 180px" @change="currentPage = 1">
         <el-option label="All" value="" />
-        <el-option label="Pending" value="new" />
+        <el-option label="Pending" value="pending" />
         <el-option label="Confirmed" value="confirmed" />
         <el-option label="False Positive" value="false_positive" />
         <el-option label="Resolved" value="resolved" />
@@ -39,7 +39,7 @@
       </el-table-column>
       <el-table-column label="Actions" width="260" fixed="right">
         <template #default="{ row }">
-          <template v-if="row.status === 'new'">
+          <template v-if="row.status === 'pending'">
             <el-button type="success" size="small" :loading="acting === row.id" @click.stop="handleConfirm(row.id)">
               Confirm
             </el-button>

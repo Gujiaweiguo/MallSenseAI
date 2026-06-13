@@ -1,9 +1,9 @@
 export type CameraStatus = 'active' | 'inactive' | 'maintenance';
 export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
-export type AlertStatus = 'new' | 'confirmed' | 'false_positive' | 'resolved';
+export type AlertStatus = 'pending' | 'confirmed' | 'false_positive' | 'resolved';
 export type AlertEventType = 'created' | 'confirmed' | 'resolved' | 'false_positive' | 'escalated';
-export type RuleType = 'passable_zone' | 'forbidden_zone' | 'object_count';
-export type WorkOrderStatus = 'open' | 'in_progress' | 'closed';
+export type RuleType = 'obstruction_duration' | 'obstruction_area' | 'litter' | 'fire_smoke';
+export type WorkOrderStatus = 'open' | 'in_progress' | 'closed' | 'cancelled';
 export type UserRole = 'admin' | 'operator' | 'viewer';
 
 export interface PaginatedQuery {

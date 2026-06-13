@@ -11,9 +11,9 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
       camera_id: 1,
       roi_id: null,
       rule_id: null,
-      alert_type: 'obstruction',
+      alert_type: 'obstruction_duration',
       severity: 'critical',
-      status: 'new',
+      status: 'pending',
       evidence_image_path: null,
       detected_at: '2026-01-01T01:00:00Z',
       resolved_at: null,
@@ -26,7 +26,7 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
       camera_id: 2,
       roi_id: null,
       rule_id: null,
-      alert_type: 'object_count',
+      alert_type: 'fire_smoke',
       severity: 'low',
       status: 'resolved',
       evidence_image_path: null,
@@ -57,10 +57,10 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
   });
 
   await page.goto('/alerts');
-  await expect(page.locator('.el-table')).toContainText('obstruction');
+  await expect(page.locator('.el-table')).toContainText('obstruction_duration');
   await expect(page.locator('.el-table')).toContainText('critical');
-  await expect(page.locator('.el-table')).toContainText('new');
-  await expect(page.locator('.el-table')).toContainText('object_count');
+  await expect(page.locator('.el-table')).toContainText('pending');
+  await expect(page.locator('.el-table')).toContainText('fire_smoke');
   await expect(page.locator('.el-table')).toContainText('resolved');
 
   await page.getByRole('button', { name: 'Confirm' }).click();
@@ -68,6 +68,6 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
 
   await page.locator('.filter-bar .el-select').first().click();
   await page.locator('.el-select-dropdown:visible').getByText('Critical', { exact: true }).click();
-  await expect(page.locator('.el-table')).toContainText('obstruction');
-  await expect(page.locator('.el-table')).not.toContainText('object_count');
+  await expect(page.locator('.el-table')).toContainText('obstruction_duration');
+  await expect(page.locator('.el-table')).not.toContainText('fire_smoke');
 });

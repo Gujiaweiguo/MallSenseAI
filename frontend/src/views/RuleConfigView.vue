@@ -43,9 +43,10 @@
           <el-form label-position="top" :model="form">
             <el-form-item label="Rule Type">
               <el-select v-model="form.rule_type" class="rule-config__full">
-                <el-option label="Passable Zone" value="passable_zone" />
-                <el-option label="Forbidden Zone" value="forbidden_zone" />
-                <el-option label="Object Count" value="object_count" />
+        <el-option label="Obstruction Duration" value="obstruction_duration" />
+        <el-option label="Obstruction Area" value="obstruction_area" />
+        <el-option label="Litter" value="litter" />
+        <el-option label="Fire/Smoke" value="fire_smoke" />
               </el-select>
             </el-form-item>
             <el-form-item label="ROI">
@@ -112,7 +113,7 @@ const form = reactive<RuleForm>(defaultForm());
 
 function defaultForm(): RuleForm {
   return {
-    rule_type: 'passable_zone',
+      rule_type: 'obstruction_duration',
     roi_id: null,
     threshold_config: {
       threshold: 0.8,
