@@ -15,6 +15,7 @@ import type {
   PaginatedQuery,
   Roi,
   RoiCreatePayload,
+  RoiUpdatePayload,
   Rule,
   RuleCreatePayload,
   RuleUpdatePayload,
@@ -62,7 +63,7 @@ export async function createScene(data: SceneCreatePayload): Promise<Scene> {
 export async function updateSceneBaseline(sceneId: number, file: File): Promise<Scene> {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await client.post<Scene>(`/scenes/${sceneId}/baseline`, formData, {
+  const response = await client.put<Scene>(`/scenes/${sceneId}/baseline`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
@@ -74,7 +75,13 @@ export async function listRois(sceneId: number): Promise<Roi[]> {
 }
 
 export async function createRoi(sceneId: number, data: RoiCreatePayload): Promise<Roi> {
-  const response = await client.post<Roi>('/rois', { ...data, scene_id: sceneId });
+  const payload = { ...data, scene_id: sceneId, zone_type: 'polygon' as const, normalized_coords: true };
+  const response = await client.post<Roi>('/rois', payload);
+  return response.data;
+}
+
+export async function updateRoi(roiId: number, data: RoiUpdatePayload): Promise<Roi> {
+  const response = await client.put<Roi>(`/rois/${roiId}`, data);
   return response.data;
 }
 

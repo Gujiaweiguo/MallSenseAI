@@ -84,6 +84,8 @@ export interface SceneCreatePayload {
   name: string;
 }
 
+export type ZoneType = 'polygon' | 'rect';
+
 export type RoiGeometry = {
   type: 'polygon';
   points: Array<[number, number]>;
@@ -93,7 +95,10 @@ export interface Roi {
   id: number;
   scene_id: number;
   name: string;
+  zone_type: ZoneType;
   geometry: RoiGeometry;
+  normalized_coords: boolean;
+  color: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -101,6 +106,11 @@ export interface Roi {
 export interface RoiCreatePayload {
   name: string;
   geometry: RoiGeometry;
+}
+
+export interface RoiUpdatePayload {
+  name?: string;
+  geometry?: RoiGeometry;
 }
 
 export interface RuleThresholdConfig {

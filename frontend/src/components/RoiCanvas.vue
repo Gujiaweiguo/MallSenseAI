@@ -5,7 +5,7 @@
     <canvas
       ref="canvasRef"
       class="roi-canvas__surface"
-      :class="{ 'roi-canvas__surface--editable': editable }"
+      :class="{ 'roi-canvas__surface--editable': isInteractive }"
       @click="handleClick"
       @dblclick.prevent="closeDraft"
       @mousemove="handleMouseMove"
@@ -29,17 +29,22 @@ const props = withDefaults(
     rois: Roi[];
     imageUrl?: string | null;
     editable?: boolean;
+    editingRoiId?: number | null;
   }>(),
   {
     imageUrl: null,
     editable: false,
+    editingRoiId: null,
   },
 );
 
 const emit = defineEmits<{
   (event: 'roi-created', geometry: RoiGeometry): void;
+  (event: 'roi-updated', id: number, geometry: RoiGeometry): void;
   (event: 'roi-deleted', id: number): void;
 }>();
+
+const isInteractive = computed(() => props.editable || props.editingRoiId !== null);
 
 type Point = [number, number];
 
@@ -115,6 +120,28 @@ function drawPolygon(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, p
   });
 }
 
+function drawPolygonDashed(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, points: Point[], color: string): void {
+  if (points.length === 0) {
+    return;
+  }
+  ctx.save();
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    const [x, y] = toCanvasPoint(point, canvas);
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.closePath();
+  ctx.strokeStyle = `${color}88`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawLabel(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, roi: Roi, color: string): void {
   const firstPoint = roi.geometry.points[0];
   if (firstPoint === undefined) {
@@ -157,8 +184,12 @@ function redraw(): void {
   deleteHitBoxes.value = [];
   props.rois.forEach((roi, index) => {
     const color = palette[index % palette.length] ?? palette[0];
-    drawPolygon(ctx, canvas, roi.geometry.points, color, true);
-    drawLabel(ctx, canvas, roi, color);
+    if (roi.id === props.editingRoiId) {
+      drawPolygonDashed(ctx, canvas, roi.geometry.points, color);
+    } else {
+      drawPolygon(ctx, canvas, roi.geometry.points, color, true);
+      drawLabel(ctx, canvas, roi, color);
+    }
   });
 
   if (draftPoints.value.length > 0) {
@@ -201,7 +232,7 @@ function handleClick(event: MouseEvent): void {
     emit('roi-deleted', roiToDelete.id);
     return;
   }
-  if (!props.editable) {
+  if (!isInteractive.value) {
     return;
   }
   draftPoints.value.push(point);
@@ -209,10 +240,14 @@ function handleClick(event: MouseEvent): void {
 }
 
 function closeDraft(): void {
-  if (!props.editable || draftPoints.value.length < 3) {
+  if (!isInteractive.value || draftPoints.value.length < 3) {
     return;
   }
-  emit('roi-created', normalizedDraft.value);
+  if (props.editingRoiId !== null) {
+    emit('roi-updated', props.editingRoiId, normalizedDraft.value);
+  } else {
+    emit('roi-created', normalizedDraft.value);
+  }
   draftPoints.value = [];
   pointer.value = null;
   redraw();
@@ -233,6 +268,11 @@ watch(() => props.editable, (enabled) => {
     pointer.value = null;
     redraw();
   }
+});
+watch(() => props.editingRoiId, () => {
+  draftPoints.value = [];
+  pointer.value = null;
+  redraw();
 });
 
 onMounted(() => {

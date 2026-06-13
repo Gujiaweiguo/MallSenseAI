@@ -263,7 +263,15 @@
     "toastDeleteFailed": "Failed to delete ROI.",
     "noBaseline": "No baseline image configured",
     "altBaseline": "Scene baseline",
-    "canvasHint": "Click to add points. Double-click to close polygon. Coordinates are normalized."
+    "canvasHint": "Click to add points. Double-click to close polygon. Coordinates are normalized.",
+    "redraw": "Redraw",
+    "cancelRedraw": "Cancel Redraw",
+    "redrawHint": "Redrawing ROI. Click new points on the image and double-click to close.",
+    "redrawingRoi": "Redrawing \"{name}\"",
+    "promptRename": "Enter new ROI name",
+    "promptRenameTitle": "Rename ROI",
+    "toastUpdated": "ROI updated.",
+    "toastUpdateFailed": "Failed to update ROI."
   },
   "alert": {
     "title": "Alerts",

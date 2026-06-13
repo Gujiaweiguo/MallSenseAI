@@ -28,7 +28,9 @@
           :rois="rois"
           :image-url="baselineUrl"
           :editable="drawingEnabled"
+          :editing-roi-id="editingRoiId"
           @roi-created="savePolygon"
+          @roi-updated="handleRoiUpdated"
           @roi-deleted="handleRoiDeleted"
         />
       </el-col>
@@ -37,9 +39,14 @@
           <template #header>
             <div class="panel-header">
               <span>{{ t('roi.title') }}</span>
-              <el-button :type="drawingEnabled ? 'warning' : 'primary'" size="small" @click="toggleDrawing">
-                {{ drawingEnabled ? t('common.button.cancelCreate') : t('common.button.createRoi') }}
-              </el-button>
+              <div class="panel-header__actions">
+                <el-button v-if="editingRoiId !== null" type="warning" size="small" @click="cancelRedraw">
+                  {{ t('roi.cancelRedraw') }}
+                </el-button>
+                <el-button v-else :type="drawingEnabled ? 'warning' : 'primary'" size="small" @click="toggleDrawing">
+                  {{ drawingEnabled ? t('common.button.cancelCreate') : t('common.button.createRoi') }}
+                </el-button>
+              </div>
             </div>
           </template>
 
@@ -52,13 +59,24 @@
             :closable="false"
           />
 
+          <el-alert
+            v-if="editingRoiId !== null"
+            class="scene-detail__draw-alert"
+            :title="t('roi.redrawHint')"
+            type="warning"
+            show-icon
+            :closable="false"
+          />
+
           <el-table :data="rois" row-key="id" stripe>
             <el-table-column prop="name" :label="t('common.table.name')" min-width="120" />
             <el-table-column :label="t('common.table.points')" width="80">
               <template #default="{ row }">{{ row.geometry.points.length }}</template>
             </el-table-column>
-            <el-table-column :label="t('common.table.actions')" width="90">
+            <el-table-column :label="t('common.table.actions')" width="160">
               <template #default="{ row }">
+                <el-button type="primary" link @click="startRenameRoi(row.id, row.name)">{{ t('common.button.edit') }}</el-button>
+                <el-button type="warning" link :disabled="editingRoiId !== null" @click="startRedrawRoi(row.id)">{{ t('roi.redraw') }}</el-button>
                 <el-button type="danger" link @click="confirmDeleteRoi(row.id, row.name)">{{ t('common.button.delete') }}</el-button>
               </template>
             </el-table-column>
@@ -81,7 +99,7 @@ import { useRoute } from 'vue-router';
 
 import type { Roi, RoiGeometry, Scene } from '@/api/types';
 import RoiCanvas from '@/components/RoiCanvas.vue';
-import { createRoi, deleteRoi, getScene, listRois, triggerSnapshot, updateSceneBaseline } from '@/api/resources';
+import { createRoi, deleteRoi, getScene, listRois, triggerSnapshot, updateRoi, updateSceneBaseline } from '@/api/resources';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -89,20 +107,16 @@ const scene = ref<Scene | null>(null);
 const rois = ref<Roi[]>([]);
 const loading = ref(false);
 const drawingEnabled = ref(false);
+const editingRoiId = ref<number | null>(null);
 const snapshotLoading = ref(false);
 
 const sceneId = computed(() => Number(route.params.id));
-const baselineUrl = computed(() => normalizeImageUrl(scene.value?.baseline_image_path ?? null));
-
-function normalizeImageUrl(path: string | null): string | null {
-  if (path === null || path.length === 0) {
+const baselineUrl = computed(() => {
+  if (scene.value === null || !scene.value.baseline_image_path) {
     return null;
   }
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) {
-    return path;
-  }
-  return `/api/${path}`;
-}
+  return `/api/scenes/${scene.value.id}/baseline`;
+});
 
 async function loadScene(): Promise<void> {
   if (!Number.isInteger(sceneId.value)) {
@@ -165,6 +179,9 @@ async function confirmDeleteRoi(roiId: number, roiName: string): Promise<void> {
     await ElMessageBox.confirm(t('roi.deleteConfirm', { name: roiName }), t('roi.deleteTitle'), { type: 'warning' });
     await deleteRoi(roiId);
     rois.value = rois.value.filter((item) => item.id !== roiId);
+    if (editingRoiId.value === roiId) {
+      editingRoiId.value = null;
+    }
     ElMessage.success(t('roi.toastDeleted'));
   } catch (error: unknown) {
     if (error === 'cancel') return;
@@ -176,6 +193,50 @@ function handleRoiDeleted(roiId: number): void {
   const roi = rois.value.find((item) => item.id === roiId);
   if (roi) {
     void confirmDeleteRoi(roiId, roi.name);
+  }
+}
+
+function startRedrawRoi(roiId: number): void {
+  drawingEnabled.value = false;
+  editingRoiId.value = roiId;
+}
+
+function cancelRedraw(): void {
+  editingRoiId.value = null;
+}
+
+async function handleRoiUpdated(roiId: number, geometry: RoiGeometry): Promise<void> {
+  try {
+    const updated = await updateRoi(roiId, { geometry });
+    const index = rois.value.findIndex((item) => item.id === roiId);
+    if (index !== -1) {
+      rois.value[index] = updated;
+    }
+    editingRoiId.value = null;
+    ElMessage.success(t('roi.toastUpdated'));
+  } catch {
+    ElMessage.error(t('roi.toastUpdateFailed'));
+  }
+}
+
+async function startRenameRoi(roiId: number, currentName: string): Promise<void> {
+  try {
+    const result = await ElMessageBox.prompt(t('roi.promptRename'), t('roi.promptRenameTitle'), {
+      confirmButtonText: t('common.button.save'),
+      cancelButtonText: t('common.button.cancel'),
+      inputValue: currentName,
+      inputPattern: /\S+/,
+      inputErrorMessage: t('roi.nameRequired'),
+    });
+    const updated = await updateRoi(roiId, { name: result.value });
+    const index = rois.value.findIndex((item) => item.id === roiId);
+    if (index !== -1) {
+      rois.value[index] = updated;
+    }
+    ElMessage.success(t('roi.toastUpdated'));
+  } catch (error: unknown) {
+    if (error === 'cancel') return;
+    ElMessage.error(t('roi.toastUpdateFailed'));
   }
 }
 
@@ -219,5 +280,10 @@ onMounted(() => {
 
 .scene-detail__draw-alert {
   margin-bottom: 12px;
+}
+
+.panel-header__actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

@@ -263,7 +263,15 @@
     "toastDeleteFailed": "删除ROI失败。",
     "noBaseline": "未配置基线图",
     "altBaseline": "场景基线图",
-    "canvasHint": "点击添加点位，双击闭合多边形。坐标已归一化。"
+    "canvasHint": "点击添加点位，双击闭合多边形。坐标已归一化。",
+    "redraw": "重绘",
+    "cancelRedraw": "取消重绘",
+    "redrawHint": "正在重绘ROI，请在图上重新点击点位并双击闭合。",
+    "redrawingRoi": "正在重绘 \"{name}\"",
+    "promptRename": "请输入新的ROI名称",
+    "promptRenameTitle": "重命名ROI",
+    "toastUpdated": "ROI已更新。",
+    "toastUpdateFailed": "更新ROI失败。"
   },
   "alert": {
     "title": "告警",

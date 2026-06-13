@@ -105,6 +105,64 @@ class TestSceneCRUD:
 
 
 # ---------------------------------------------------------------------------
+# ROI CRUD
+# ---------------------------------------------------------------------------
+
+
+class TestRoiCRUD:
+    def _create_scene(self, client: TestClient, auth_headers: dict) -> dict:
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        return client.post(
+            "/api/scenes", json={"camera_id": cam["id"], "name": "Test Scene"}, headers=auth_headers
+        ).json()
+
+    def _create_roi(self, client: TestClient, auth_headers: dict, scene_id: int) -> dict:
+        payload = {
+            "scene_id": scene_id,
+            "name": "Test ROI",
+            "zone_type": "polygon",
+            "geometry": {"type": "polygon", "points": [[0.1, 0.1], [0.5, 0.1], [0.5, 0.5], [0.1, 0.5]]},
+        }
+        return client.post("/api/rois", json=payload, headers=auth_headers).json()
+
+    def test_create_and_list_rois(self, client: TestClient, auth_headers: dict):
+        scene = self._create_scene(client, auth_headers)
+        roi = self._create_roi(client, auth_headers, scene["id"])
+        assert roi["name"] == "Test ROI"
+
+        resp = client.get(f"/api/rois?scene_id={scene['id']}", headers=auth_headers)
+        assert resp.status_code == 200
+        assert len(resp.json()) == 1
+
+    def test_update_roi_name(self, client: TestClient, auth_headers: dict):
+        scene = self._create_scene(client, auth_headers)
+        roi = self._create_roi(client, auth_headers, scene["id"])
+
+        resp = client.put(f"/api/rois/{roi['id']}", json={"name": "Renamed ROI"}, headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "Renamed ROI"
+
+    def test_update_roi_geometry(self, client: TestClient, auth_headers: dict):
+        scene = self._create_scene(client, auth_headers)
+        roi = self._create_roi(client, auth_headers, scene["id"])
+
+        new_geometry = {"type": "polygon", "points": [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]]}
+        resp = client.put(f"/api/rois/{roi['id']}", json={"geometry": new_geometry}, headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["geometry"]["points"] == new_geometry["points"]
+
+    def test_delete_roi(self, client: TestClient, auth_headers: dict):
+        scene = self._create_scene(client, auth_headers)
+        roi = self._create_roi(client, auth_headers, scene["id"])
+
+        resp = client.delete(f"/api/rois/{roi['id']}", headers=auth_headers)
+        assert resp.status_code == 204
+
+        resp = client.get(f"/api/rois/{roi['id']}", headers=auth_headers)
+        assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
 # Alert / Rule / User
 # ---------------------------------------------------------------------------
 
