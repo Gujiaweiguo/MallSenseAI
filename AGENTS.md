@@ -36,7 +36,7 @@ MallSenseAI/
 │   │   ├── auth/         # Pinia auth store, JWT parsing, localStorage session
 │   │   ├── utils/        # Shared constants, tag type mappings (centralized)
 │   │   └── router/       # 11 routes with auth/admin guards
-│   └── e2e/              # 10 Playwright e2e tests (route mocking, no backend needed)
+│   └── e2e/              # 17 Playwright e2e tests (route mocking, no backend needed)
 ├── workers/              # Asyncio inspection worker system
 │   ├── scheduler.py      # InspectionScheduler — periodic capture with failure backoff
 │   ├── executor.py       # InspectionExecutor + BatchExecutor — concurrent camera capture
@@ -69,8 +69,7 @@ MallSenseAI/
 | `cd frontend && npm run dev` | Vue 3 dev server on port 5373, proxies `/api` → `:5380` |
 | `cd frontend && npm run build` | Production build (vue-tsc + vite) |
 | `python3 -m pytest backend/tests/ -v` | Run 244 backend tests |
-| `cd frontend && npx playwright test` | Run 10 e2e tests (Chromium, route mocking) |
-| `python3 -m workers.run` | Start inspection scheduler (asyncio worker) |
+| `cd frontend && npx playwright test` | Run 17 e2e tests (Chromium, route mocking) || `python3 -m workers.run` | Start inspection scheduler (asyncio worker) |
 | `python3 -m backend.app.db.run_migration --dry-run` | Legacy migration dry-run |
 | `python3 -m backend.app.db.run_migration` | Legacy migration execution |
 
@@ -110,7 +109,9 @@ MallSenseAI/
 - **Coordinates**: All ROI coordinates in normalized [0.0, 1.0] space. Conversion helpers in `shared/coordinate_standard.py`.
 - **Camera credentials**: `Camera.password_hash` stores **plaintext** (needed for HTTP/RTSP auth to cameras), not bcrypt. `User.password_hash` is properly bcrypt-hashed.
 - **Detection pipeline**: `workers/scheduler.py` → `executor.py` (capture) → detectors (YOLO debris/fire-smoke) → `rules/engine.py` (obstruction evaluation) → `alerts/service.py` (lifecycle) → `notifications/service.py` (dispatch)
+- **Detection audit**: All raw detections persisted to `detection_events` table via `pipeline._persist_detections()`, with ROI matching via centroid-in-polygon
 - **Alert lifecycle**: `pending` → `confirmed` → `resolved` (or `false_positive`). Work orders auto-created on confirm.
+- **Real-time push**: WebSocket endpoint `/api/ws/alerts` with JWT auth. Frontend receives alert events via `useAlertEvents` composable, notification bell with unread badge and audio beep.
 - **Auth**: JWT HS256 via python-jose. Token payload has `sub` (user ID) + `exp` only; frontend resolves full user profile via `GET /api/users/{id}`.
 - **Inspection worker**: Asyncio-based periodic scheduler with per-camera intervals, exponential failure backoff (30s→60s→120s→300s), bounded concurrency (default 10), and graceful SIGINT/SIGTERM shutdown.
 
@@ -140,7 +141,7 @@ MallSenseAI/
 
 ## Test coverage
 - **Backend**: 244 tests — API (23, FastAPI TestClient + file-based SQLite), ROI engine (46, pure unit), Rule engine (68, pure unit), Pipeline + DetectionEvent (23, mock-based), Workers (84: models 17, metrics 18, executor 10, scheduler 39)
-- **Frontend e2e**: 10 Playwright tests using `page.route()` mocking (no real backend)
+- **Frontend e2e**: 17 Playwright tests — auth (2), navigation (2), cameras (1), scenes (1), alerts (1), alert-detail drawer (3), detection-events (4), work-orders (1), users (1), dashboard (1). Uses `page.route()` mocking, no real backend needed.
 - **CI**: GitHub Actions runs all three on every push/PR
 
 ## Known issues and gotchas
@@ -277,4 +278,3 @@ pgvector/pgvector:pg16 ─── postgres:5432 (内部网络)
 ### 当前测试覆盖盲区（已知）
 
 - 后端测试用 SQLite，生产用 PostgreSQL+pgvector — 无集成测试
-- 前端 AlertDetailDrawer 和 DetectionEventListView 无 e2e 覆盖
