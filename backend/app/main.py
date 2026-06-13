@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
 from backend.app.api import alert_workflow, alerts, cameras, dashboard, detection_events, notifications, rois, rules, scenes, users, work_orders
 from backend.app.alerts.ws import router as ws_router
 from backend.app.auth.router import router as auth_router
 from backend.app.core.config import get_settings
+from backend.app.db.session import get_db
 
 settings = get_settings()
 
@@ -61,13 +63,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 @app.get("/api/health")
-def health_check() -> JSONResponse:
+def health_check(db: Session = Depends(get_db)) -> JSONResponse:
     from sqlalchemy import text
-    from backend.app.db.session import engine
 
     try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1"))
     except Exception:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
