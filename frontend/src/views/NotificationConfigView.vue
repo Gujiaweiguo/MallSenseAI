@@ -2,10 +2,10 @@
   <section class="page-card notif-config">
     <div class="notif-config__header">
       <div>
-        <h2 class="page-title">Notification Configuration</h2>
-        <p class="page-subtitle">Manage alert notification groups and delivery channels.</p>
+        <h2 class="page-title">{{ t('notification.title') }}</h2>
+        <p class="page-subtitle">{{ t('notification.subtitle') }}</p>
       </div>
-      <el-button type="primary" @click="resetGroupForm">Create Group</el-button>
+      <el-button type="primary" @click="resetGroupForm">{{ t('common.button.createGroup') }}</el-button>
     </div>
 
     <el-row :gutter="20">
@@ -19,9 +19,9 @@
           :current-row-key="selectedGroupId"
           @row-click="selectGroup"
         >
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="name" label="Name" min-width="180" />
-          <el-table-column label="Severities" min-width="260">
+          <el-table-column prop="id" :label="t('common.table.id')" width="80" />
+          <el-table-column prop="name" :label="t('common.table.name')" min-width="180" />
+          <el-table-column :label="t('common.table.severities')" min-width="260">
             <template #default="{ row }">
               <div class="notif-config__tag-list">
                 <el-tag
@@ -30,27 +30,27 @@
                   :type="severityTagType(severity)"
                   size="small"
                 >
-                  {{ severity }}
+                  {{ t('common.enum.alertSeverity.' + severity) }}
                 </el-tag>
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="Enabled" width="110">
+          <el-table-column :label="t('common.table.enabled')" width="110">
             <template #default="{ row }">
-              <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Enabled' : 'Disabled' }}</el-tag>
+              <el-tag :type="row.enabled ? 'success' : 'info'">{{ t('common.enum.enabledDisabled.' + (row.enabled ? 'enabled' : 'disabled')) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="Channels Count" width="150">
+          <el-table-column :label="t('common.table.channelsCount')" width="150">
             <template #default="{ row }">{{ row.notification_channels.length }}</template>
           </el-table-column>
-          <el-table-column label="Actions" width="140" fixed="right">
+          <el-table-column :label="t('common.table.actions')" width="140" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" link @click.stop="selectGroup(row)">Edit</el-button>
-              <el-button type="danger" link @click.stop="confirmDeleteGroup(row)">Delete</el-button>
+              <el-button type="primary" link @click.stop="selectGroup(row)">{{ t('common.button.edit') }}</el-button>
+              <el-button type="danger" link @click.stop="confirmDeleteGroup(row)">{{ t('common.button.delete') }}</el-button>
             </template>
           </el-table-column>
           <template #empty>
-            <span class="empty-note">No notification groups configured.</span>
+            <span class="empty-note">{{ t('common.empty.noGroups') }}</span>
           </template>
         </el-table>
       </el-col>
@@ -58,26 +58,26 @@
       <el-col :xs="24" :lg="8">
         <div class="notif-config__side-stack">
           <el-card shadow="never">
-            <template #header>{{ selectedGroupId === null ? 'Create Group' : `Edit Group #${selectedGroupId}` }}</template>
+            <template #header>{{ selectedGroupId === null ? t('notification.createGroupTitle') : t('notification.editGroupTitle', { id: selectedGroupId }) }}</template>
             <el-form label-position="top" :model="groupForm" @submit.prevent="submitGroupForm">
-              <el-form-item label="Name" required>
-                <el-input v-model="groupForm.name" placeholder="Notification group name" />
+              <el-form-item :label="t('notification.formName')" required>
+                <el-input v-model="groupForm.name" :placeholder="t('notification.phGroupName')" />
               </el-form-item>
-              <el-form-item label="Severities">
+              <el-form-item :label="t('notification.formSeverities')">
                 <el-checkbox-group v-model="groupForm.severities" class="notif-config__checkbox-list">
-                  <el-checkbox label="low">Low</el-checkbox>
-                  <el-checkbox label="medium">Medium</el-checkbox>
-                  <el-checkbox label="high">High</el-checkbox>
-                  <el-checkbox label="critical">Critical</el-checkbox>
+                  <el-checkbox label="low">{{ t('common.enum.alertSeverity.low') }}</el-checkbox>
+                  <el-checkbox label="medium">{{ t('common.enum.alertSeverity.medium') }}</el-checkbox>
+                  <el-checkbox label="high">{{ t('common.enum.alertSeverity.high') }}</el-checkbox>
+                  <el-checkbox label="critical">{{ t('common.enum.alertSeverity.critical') }}</el-checkbox>
                 </el-checkbox-group>
               </el-form-item>
-              <el-form-item label="Enabled">
+              <el-form-item :label="t('notification.formEnabled')">
                 <el-switch v-model="groupForm.enabled" />
               </el-form-item>
               <div class="notif-config__form-actions">
-                <el-button @click="resetGroupForm">Reset</el-button>
+                <el-button @click="resetGroupForm">{{ t('common.button.reset') }}</el-button>
                 <el-button type="primary" :loading="savingGroup" @click="submitGroupForm">
-                  {{ selectedGroupId === null ? 'Create' : 'Save' }}
+                  {{ selectedGroupId === null ? t('common.button.create') : t('common.button.save') }}
                 </el-button>
               </div>
             </el-form>
@@ -86,8 +86,8 @@
           <el-card v-if="selectedGroup !== null" shadow="never">
             <template #header>
               <div class="notif-config__header">
-                <span>Channels for Group #{{ selectedGroup.id }}</span>
-                <el-button size="small" type="primary" @click="openChannelForm">Add Channel</el-button>
+                <span>{{ t('notification.channelsForGroup', { id: selectedGroup.id }) }}</span>
+                <el-button size="small" type="primary" @click="openChannelForm">{{ t('common.button.addChannel') }}</el-button>
               </div>
             </template>
 
@@ -98,20 +98,20 @@
                 class="notif-config__channel-row"
               >
                 <div class="notif-config__channel-meta">
-                  <el-tag size="small">{{ channel.channel_type }}</el-tag>
+                  <el-tag size="small">{{ t('common.enum.channelType.' + channel.channel_type) }}</el-tag>
                   <el-tag :type="channel.enabled ? 'success' : 'info'" size="small">
-                    {{ channel.enabled ? 'Enabled' : 'Disabled' }}
+                    {{ t('common.enum.enabledDisabled.' + (channel.enabled ? 'enabled' : 'disabled')) }}
                   </el-tag>
                 </div>
                 <div class="notif-config__channel-actions">
                   <el-button size="small" :loading="testingChannelId === channel.id" @click="handleTestChannel(channel.id)">
-                    Test
+                    {{ t('common.button.test') }}
                   </el-button>
-                  <el-button size="small" type="primary" @click="openEditChannelForm(channel)">Edit</el-button>
-                  <el-button size="small" type="danger" @click="confirmDeleteChannel(channel.id)">Delete</el-button>
+                  <el-button size="small" type="primary" @click="openEditChannelForm(channel)">{{ t('common.button.edit') }}</el-button>
+                  <el-button size="small" type="danger" @click="confirmDeleteChannel(channel.id)">{{ t('common.button.delete') }}</el-button>
                 </div>
               </div>
-              <span v-if="selectedGroup.notification_channels.length === 0" class="empty-note">No channels configured.</span>
+              <span v-if="selectedGroup.notification_channels.length === 0" class="empty-note">{{ t('common.empty.noChannels') }}</span>
             </div>
 
             <el-form
@@ -121,67 +121,67 @@
               class="notif-config__channel-form"
               @submit.prevent="submitChannelForm"
             >
-              <el-form-item label="Channel Type">
+              <el-form-item :label="t('notification.channelFormType')">
                 <el-select
                   v-model="channelForm.channel_type"
                   class="notif-config__full"
                   :disabled="editingChannelId !== null"
                   @change="resetChannelConfig"
                 >
-                  <el-option label="WeCom" value="wecom" />
-                  <el-option label="SMS" value="sms" />
-                  <el-option label="Email" value="email" />
+                  <el-option :label="t('common.enum.channelType.wecom')" value="wecom" />
+                  <el-option :label="t('common.enum.channelType.sms')" value="sms" />
+                  <el-option :label="t('common.enum.channelType.email')" value="email" />
                 </el-select>
               </el-form-item>
 
               <template v-if="channelForm.channel_type === 'wecom'">
-                <el-form-item label="Webhook URL" required>
-                  <el-input v-model="channelForm.webhook_url" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?..." />
+                <el-form-item :label="t('notification.wecomWebhookUrl')" required>
+                  <el-input v-model="channelForm.webhook_url" :placeholder="t('notification.phWebhookUrl')" />
                 </el-form-item>
               </template>
 
               <template v-else-if="channelForm.channel_type === 'sms'">
-                <el-form-item label="Provider">
+                <el-form-item :label="t('notification.smsProvider')">
                   <el-select v-model="channelForm.provider" class="notif-config__full">
                     <el-option label="Stub" value="stub" />
                     <el-option label="Twilio" value="twilio" />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="Phone Numbers" required>
-                  <el-input v-model="channelForm.phone_numbers" placeholder="+15550001111, +15550002222" />
+                <el-form-item :label="t('notification.smsPhoneNumbers')" required>
+                  <el-input v-model="channelForm.phone_numbers" :placeholder="`${t('notification.phPhone1')}, ${t('notification.phPhone2')}`" />
                 </el-form-item>
                 <template v-if="channelForm.provider === 'twilio'">
-                  <el-form-item label="Account SID">
+                  <el-form-item :label="t('notification.smsAccountSid')">
                     <el-input v-model="channelForm.account_sid" />
                   </el-form-item>
-                  <el-form-item label="Auth Token">
+                  <el-form-item :label="t('notification.smsAuthToken')">
                     <el-input v-model="channelForm.auth_token" type="password" show-password />
                   </el-form-item>
-                  <el-form-item label="From Number">
-                    <el-input v-model="channelForm.from_number" placeholder="+15550000000" />
+                  <el-form-item :label="t('notification.smsFromNumber')">
+                    <el-input v-model="channelForm.from_number" :placeholder="t('notification.phPhone3')" />
                   </el-form-item>
                 </template>
               </template>
 
               <template v-else>
-                <el-form-item label="To Address" required>
-                  <el-input v-model="channelForm.to_address" placeholder="ops@example.com" />
+                <el-form-item :label="t('notification.emailToAddress')" required>
+                  <el-input v-model="channelForm.to_address" :placeholder="t('notification.phEmail')" />
                 </el-form-item>
-                <el-form-item label="SMTP Host">
-                  <el-input v-model="channelForm.smtp_host" placeholder="Placeholder — not implemented yet" />
+                <el-form-item :label="t('notification.emailSmtpHost')">
+                  <el-input v-model="channelForm.smtp_host" :placeholder="t('common.placeholderNotImplemented')" />
                 </el-form-item>
-                <el-form-item label="SMTP Port">
+                <el-form-item :label="t('notification.emailSmtpPort')">
                   <el-input-number v-model="channelForm.smtp_port" :min="1" :max="65535" class="notif-config__full" />
                 </el-form-item>
               </template>
 
-              <el-form-item label="Enabled">
+              <el-form-item :label="t('notification.channelFormEnabled')">
                 <el-switch v-model="channelForm.enabled" />
               </el-form-item>
               <div class="notif-config__form-actions">
-                <el-button @click="channelFormVisible = false">Cancel</el-button>
+                <el-button @click="channelFormVisible = false">{{ t('common.button.cancel') }}</el-button>
                 <el-button type="primary" :loading="savingChannel" @click="submitChannelForm">
-                  {{ editingChannelId === null ? 'Save' : 'Update' }}
+                  {{ t('common.button.save') }}
                 </el-button>
               </div>
             </el-form>
@@ -195,6 +195,7 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import {
   createNotificationChannel,
@@ -216,6 +217,7 @@ import type {
 } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
+const { t } = useI18n();
 type TagType = '' | 'success' | 'warning' | 'danger' | 'info';
 type SmsProvider = 'stub' | 'twilio';
 
@@ -428,7 +430,7 @@ async function loadGroups(): Promise<void> {
       }
     }
   } catch {
-    ElMessage.error('Failed to load notification groups.');
+    ElMessage.error(t('notification.toastLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -436,11 +438,11 @@ async function loadGroups(): Promise<void> {
 
 async function submitGroupForm(): Promise<void> {
   if (groupForm.name.trim().length === 0) {
-    ElMessage.error('Group name is required.');
+    ElMessage.error(t('notification.toastNameRequired'));
     return;
   }
   if (groupForm.severities.length === 0) {
-    ElMessage.error('Select at least one severity.');
+    ElMessage.error(t('notification.toastSeverityRequired'));
     return;
   }
 
@@ -448,17 +450,17 @@ async function submitGroupForm(): Promise<void> {
   try {
     if (selectedGroupId.value === null) {
       const created = await createNotificationGroup(groupPayloadFromForm());
-      ElMessage.success('Notification group created.');
+      ElMessage.success(t('notification.toastGroupCreated'));
       await loadGroups();
       selectGroup(created);
     } else {
       const updated = await updateNotificationGroup(selectedGroupId.value, groupPayloadFromForm());
-      ElMessage.success('Notification group updated.');
+      ElMessage.success(t('notification.toastGroupUpdated'));
       await loadGroups();
       selectGroup(updated);
     }
   } catch {
-    ElMessage.error('Failed to save notification group.');
+    ElMessage.error(t('notification.toastGroupSaveFailed'));
   } finally {
     savingGroup.value = false;
   }
@@ -466,16 +468,16 @@ async function submitGroupForm(): Promise<void> {
 
 async function confirmDeleteGroup(group: NotificationGroup): Promise<void> {
   try {
-    await ElMessageBox.confirm(`Delete notification group #${group.id}?`, 'Delete Notification Group', { type: 'warning' });
+    await ElMessageBox.confirm(t('notification.deleteGroupConfirm', { id: group.id }), t('notification.deleteGroupTitle'), { type: 'warning' });
     await deleteNotificationGroup(group.id);
-    ElMessage.success('Notification group deleted.');
+    ElMessage.success(t('notification.toastGroupDeleted'));
     if (selectedGroupId.value === group.id) {
       resetGroupForm();
     }
     await loadGroups();
   } catch (error: unknown) {
     if (error === 'cancel') return;
-    ElMessage.error('Failed to delete notification group.');
+    ElMessage.error(t('notification.toastGroupDeleteFailed'));
   }
 }
 
@@ -486,18 +488,18 @@ async function submitChannelForm(): Promise<void> {
   try {
     if (editingChannelId.value === null) {
       await createNotificationChannel(selectedGroupId.value, channelPayloadFromForm());
-      ElMessage.success('Notification channel created.');
+      ElMessage.success(t('notification.toastChannelCreated'));
     } else {
       await updateNotificationChannel(editingChannelId.value, {
         config: channelConfigFromForm(),
         enabled: channelForm.enabled,
       });
-      ElMessage.success('Notification channel updated.');
+      ElMessage.success(t('notification.toastChannelUpdated'));
     }
     channelFormVisible.value = false;
     await loadGroups();
   } catch {
-    ElMessage.error('Failed to save notification channel.');
+    ElMessage.error(t('notification.toastChannelSaveFailed'));
   } finally {
     savingChannel.value = false;
   }
@@ -505,13 +507,13 @@ async function submitChannelForm(): Promise<void> {
 
 async function confirmDeleteChannel(id: number): Promise<void> {
   try {
-    await ElMessageBox.confirm(`Delete notification channel #${id}?`, 'Delete Notification Channel', { type: 'warning' });
+    await ElMessageBox.confirm(t('notification.deleteChannelConfirm', { id }), t('notification.deleteChannelTitle'), { type: 'warning' });
     await deleteNotificationChannel(id);
-    ElMessage.success('Notification channel deleted.');
+    ElMessage.success(t('notification.toastChannelDeleted'));
     await loadGroups();
   } catch (error: unknown) {
     if (error === 'cancel') return;
-    ElMessage.error('Failed to delete notification channel.');
+    ElMessage.error(t('notification.toastChannelDeleteFailed'));
   }
 }
 
@@ -520,12 +522,12 @@ async function handleTestChannel(id: number): Promise<void> {
   try {
     const result = await testNotificationChannel(id);
     if (result.success) {
-      ElMessage.success(`Notification channel #${result.channel_id} test succeeded.`);
+      ElMessage.success(t('notification.toastTestSucceeded', { id: result.channel_id }));
     } else {
-      ElMessage.error(`Notification channel #${result.channel_id} test failed.`);
+      ElMessage.error(t('notification.toastTestFailed', { id: result.channel_id }));
     }
   } catch {
-    ElMessage.error('Failed to test notification channel.');
+    ElMessage.error(t('notification.toastTestError'));
   } finally {
     testingChannelId.value = null;
   }

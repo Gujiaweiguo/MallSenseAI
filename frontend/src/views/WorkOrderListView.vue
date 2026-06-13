@@ -1,60 +1,60 @@
 <template>
   <section class="page-card">
-    <h2 class="page-title">Work Orders</h2>
-    <p class="page-subtitle">Work-order list loaded from GET /api/work-orders.</p>
+    <h2 class="page-title">{{ t('workOrder.title') }}</h2>
+    <p class="page-subtitle">{{ t('workOrder.subtitle') }}</p>
 
     <div class="filter-bar">
-      <el-select v-model="statusFilter" placeholder="Status" clearable style="width: 200px" @change="currentPage = 1">
-        <el-option label="All" value="" />
-        <el-option label="Open" value="open" />
-        <el-option label="In Progress" value="in_progress" />
-        <el-option label="Closed" value="closed" />
-        <el-option label="Cancelled" value="cancelled" />
+      <el-select v-model="statusFilter" :placeholder="t('workOrder.filterStatus')" clearable style="width: 200px" @change="currentPage = 1">
+        <el-option :label="t('common.all')" value="" />
+        <el-option :label="t('common.enum.workOrderStatus.open')" value="open" />
+        <el-option :label="t('common.enum.workOrderStatus.in_progress')" value="in_progress" />
+        <el-option :label="t('common.enum.workOrderStatus.closed')" value="closed" />
+        <el-option :label="t('common.enum.workOrderStatus.cancelled')" value="cancelled" />
       </el-select>
     </div>
 
     <el-table v-loading="loading" :data="pagedWorkOrders" row-key="id" stripe>
-      <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="alert_id" label="Alert ID" width="120" />
-      <el-table-column prop="status" label="Status" width="160">
+      <el-table-column prop="id" :label="t('common.table.id')" width="90" />
+      <el-table-column prop="alert_id" :label="t('common.table.alertId')" width="120" />
+      <el-table-column prop="status" :label="t('common.table.status')" width="160">
         <template #default="{ row }">
-          <el-tag :type="statusType(row.status)">{{ row.status }}</el-tag>
+          <el-tag :type="statusType(row.status)">{{ t('common.enum.workOrderStatus.' + row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Assigned To" width="160">
+      <el-table-column :label="t('common.table.assignedTo')" width="160">
         <template #default="{ row }">
           <template v-if="row.assigned_to != null">
             {{ userName(row.assigned_to) }}
           </template>
-          <el-tag v-else type="warning" disable-transitions>Unassigned</el-tag>
+          <el-tag v-else type="warning" disable-transitions>{{ t('common.unassigned') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="notes" label="Notes" min-width="220" show-overflow-tooltip />
-      <el-table-column label="Actions" width="280" fixed="right">
+      <el-table-column prop="notes" :label="t('common.table.notes')" min-width="220" show-overflow-tooltip />
+      <el-table-column :label="t('common.table.actions')" width="280" fixed="right">
         <template #default="{ row }">
           <template v-if="row.status === 'open'">
             <el-button type="primary" size="small" :loading="acting === row.id" @click="handleStart(row.id)">
-              Start
+              {{ t('common.button.start') }}
             </el-button>
             <el-button type="success" size="small" :loading="acting === row.id" @click="handleAssign(row.id)">
-              Assign
+              {{ t('common.button.assign') }}
             </el-button>
           </template>
           <template v-else-if="row.status === 'in_progress'">
             <el-button type="success" size="small" :loading="acting === row.id" @click="handleClose(row.id)">
-              Close
+              {{ t('common.button.close') }}
             </el-button>
             <el-button type="danger" size="small" :loading="acting === row.id" @click="handleCancel(row.id)">
-              Cancel
+              {{ t('common.button.cancel') }}
             </el-button>
           </template>
           <template v-else>
-            <el-tag type="info" disable-transitions>Done</el-tag>
+            <el-tag type="info" disable-transitions>{{ t('common.done') }}</el-tag>
           </template>
         </template>
       </el-table-column>
       <template #empty>
-        <span class="empty-note">No work orders found.</span>
+        <span class="empty-note">{{ t('common.empty.noWorkOrders') }}</span>
       </template>
     </el-table>
 
@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import {
   listWorkOrders,
@@ -84,6 +85,7 @@ import type { User, WorkOrder } from '@/api/types';
 import { workOrderStatusTagType } from '@/utils/tagType';
 import { DEFAULT_LIST_LIMIT, USER_SELECT_LIMIT } from '@/utils/constants';
 
+const { t } = useI18n();
 const workOrders = ref<WorkOrder[]>([]);
 const users = ref<User[]>([]);
 const loading = ref(false);
@@ -101,7 +103,7 @@ const userMap = computed(() => {
 });
 
 function userName(id: number): string {
-  return userMap.value.get(id)?.display_name ?? `User #${id}`;
+  return userMap.value.get(id)?.display_name ?? t('alert.userN', { id });
 }
 
 const filteredWorkOrders = computed(() => {
@@ -121,7 +123,7 @@ async function loadWorkOrders(): Promise<void> {
   try {
     workOrders.value = await listWorkOrders({ limit: DEFAULT_LIST_LIMIT });
   } catch {
-    ElMessage.error('Failed to load work orders.');
+    ElMessage.error(t('workOrder.toastLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -139,10 +141,10 @@ async function handleStart(id: number): Promise<void> {
   acting.value = id;
   try {
     await transitionWorkOrder(id, { target: 'in_progress' });
-    ElMessage.success('Work order started.');
+    ElMessage.success(t('workOrder.toastStarted'));
     await loadWorkOrders();
   } catch {
-    ElMessage.error('Failed to start work order.');
+    ElMessage.error(t('workOrder.toastStartFailed'));
   } finally {
     acting.value = null;
   }
@@ -150,18 +152,18 @@ async function handleStart(id: number): Promise<void> {
 
 async function handleClose(id: number): Promise<void> {
   try {
-    const { value: notes } = await ElMessageBox.prompt('Optional closing notes', 'Close Work Order', {
-      confirmButtonText: 'Close',
-      cancelButtonText: 'Cancel',
-      inputPlaceholder: 'Notes (optional)',
+    const { value: notes } = await ElMessageBox.prompt(t('workOrder.closeNotesLabel'), t('workOrder.closeTitle'), {
+      confirmButtonText: t('common.button.close'),
+      cancelButtonText: t('common.button.cancel'),
+      inputPlaceholder: t('workOrder.closeNotesPlaceholder'),
     });
     acting.value = id;
     await transitionWorkOrder(id, { target: 'closed', notes: notes || undefined });
-    ElMessage.success('Work order closed.');
+    ElMessage.success(t('workOrder.toastClosed'));
     await loadWorkOrders();
   } catch (err: unknown) {
     if (err !== 'cancel' && err instanceof Error && err.message !== 'cancel') {
-      ElMessage.error('Failed to close work order.');
+      ElMessage.error(t('workOrder.toastCloseFailed'));
     }
   } finally {
     acting.value = null;
@@ -170,18 +172,18 @@ async function handleClose(id: number): Promise<void> {
 
 async function handleCancel(id: number): Promise<void> {
   try {
-    await ElMessageBox.confirm('Are you sure you want to cancel this work order?', 'Cancel Work Order', {
-      confirmButtonText: 'Cancel Order',
-      cancelButtonText: 'Keep',
+    await ElMessageBox.confirm(t('workOrder.cancelConfirm'), t('workOrder.cancelTitle'), {
+      confirmButtonText: t('common.cancelOrder'),
+      cancelButtonText: t('common.keep'),
       type: 'warning',
     });
     acting.value = id;
     await transitionWorkOrder(id, { target: 'cancelled' });
-    ElMessage.success('Work order cancelled.');
+    ElMessage.success(t('workOrder.toastCancelled'));
     await loadWorkOrders();
   } catch (err: unknown) {
     if (err !== 'cancel' && err instanceof Error && err.message !== 'cancel') {
-      ElMessage.error('Failed to cancel work order.');
+      ElMessage.error(t('workOrder.toastCancelFailed'));
     }
   } finally {
     acting.value = null;
@@ -190,20 +192,20 @@ async function handleCancel(id: number): Promise<void> {
 
 async function handleAssign(id: number): Promise<void> {
   try {
-    const { value: rawUserId } = await ElMessageBox.prompt('Enter user ID to assign', 'Assign Work Order', {
-      confirmButtonText: 'Assign',
-      cancelButtonText: 'Cancel',
-      inputPlaceholder: 'User ID (number)',
+    const { value: rawUserId } = await ElMessageBox.prompt(t('workOrder.assignPrompt'), t('workOrder.assignTitle'), {
+      confirmButtonText: t('common.button.assign'),
+      cancelButtonText: t('common.button.cancel'),
+      inputPlaceholder: t('workOrder.assignPlaceholder'),
       inputPattern: /^\d+$/,
-      inputErrorMessage: 'Please enter a valid numeric user ID',
+      inputErrorMessage: t('workOrder.assignValidation'),
     });
     acting.value = id;
     await assignWorkOrder(id, { user_id: Number(rawUserId) });
-    ElMessage.success('Work order assigned.');
+    ElMessage.success(t('workOrder.toastAssigned'));
     await loadWorkOrders();
   } catch (err: unknown) {
     if (err !== 'cancel' && err instanceof Error && err.message !== 'cancel') {
-      ElMessage.error('Failed to assign work order.');
+      ElMessage.error(t('workOrder.toastAssignFailed'));
     }
   } finally {
     acting.value = null;

@@ -1,7 +1,7 @@
 <template>
   <div ref="containerRef" class="roi-canvas" @mouseleave="hoveredDeleteId = null">
-    <img v-if="imageUrl" class="roi-canvas__image" :src="imageUrl" alt="Scene baseline" @load="resizeCanvas" />
-    <div v-else class="roi-canvas__placeholder">No baseline image configured</div>
+    <img v-if="imageUrl" class="roi-canvas__image" :src="imageUrl" :alt="t('roi.altBaseline')" @load="resizeCanvas" />
+    <div v-else class="roi-canvas__placeholder">{{ t('roi.noBaseline') }}</div>
     <canvas
       ref="canvasRef"
       class="roi-canvas__surface"
@@ -11,15 +11,18 @@
       @mousemove="handleMouseMove"
     />
     <div class="roi-canvas__hint">
-      Click to add points. Double-click to close polygon. Coordinates are normalized.
+      {{ t('roi.canvasHint') }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import type { Roi, RoiGeometry } from '@/api/types';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{

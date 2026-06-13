@@ -2,80 +2,82 @@
   <section class="page-card rule-config">
     <div class="rule-config__header">
       <div>
-        <h2 class="page-title">Rule Configuration</h2>
-        <p class="page-subtitle">Configure ROI-based detection rules for camera #{{ cameraId }}.</p>
+        <h2 class="page-title">{{ t('rule.title') }}</h2>
+        <p class="page-subtitle">{{ t('rule.subtitle', { id: cameraId }) }}</p>
       </div>
-      <el-button type="primary" @click="openCreateForm">Create Rule</el-button>
+      <el-button type="primary" @click="openCreateForm">{{ t('common.button.createRule') }}</el-button>
     </div>
 
     <el-row :gutter="20">
       <el-col :xs="24" :lg="16">
         <el-table v-loading="loading" :data="rules" row-key="id" stripe>
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="rule_type" label="Type" min-width="150" />
-          <el-table-column label="ROI" min-width="140">
+          <el-table-column prop="id" :label="t('common.table.id')" width="80" />
+          <el-table-column :label="t('common.table.type')" min-width="150">
+            <template #default="{ row }">{{ t('common.enum.ruleType.' + row.rule_type) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('common.table.roi')" min-width="140">
             <template #default="{ row }">{{ roiName(row.roi_id) }}</template>
           </el-table-column>
-          <el-table-column prop="priority" label="Priority" width="100" />
-          <el-table-column label="Enabled" width="110">
+          <el-table-column prop="priority" :label="t('common.table.priority')" width="100" />
+          <el-table-column :label="t('common.table.enabled')" width="110">
             <template #default="{ row }">
-              <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Enabled' : 'Disabled' }}</el-tag>
+              <el-tag :type="row.enabled ? 'success' : 'info'">{{ t('common.enum.enabledDisabled.' + (row.enabled ? 'enabled' : 'disabled')) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="Thresholds" min-width="220">
+          <el-table-column :label="t('common.table.thresholds')" min-width="220">
             <template #default="{ row }">{{ formatThresholds(row.threshold_config) }}</template>
           </el-table-column>
-          <el-table-column label="Actions" width="140" fixed="right">
+          <el-table-column :label="t('common.table.actions')" width="140" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" link @click="openEditForm(row)">Edit</el-button>
-              <el-button type="danger" link @click="confirmDeleteRule(row)">Delete</el-button>
+              <el-button type="primary" link @click="openEditForm(row)">{{ t('common.button.edit') }}</el-button>
+              <el-button type="danger" link @click="confirmDeleteRule(row)">{{ t('common.button.delete') }}</el-button>
             </template>
           </el-table-column>
           <template #empty>
-            <span class="empty-note">No rules configured.</span>
+            <span class="empty-note">{{ t('common.empty.noRules') }}</span>
           </template>
         </el-table>
       </el-col>
 
       <el-col :xs="24" :lg="8">
         <el-card shadow="never">
-          <template #header>{{ editingRuleId === null ? 'Create Rule' : `Edit Rule #${editingRuleId}` }}</template>
+          <template #header>{{ editingRuleId === null ? t('rule.createRuleTitle') : t('rule.editRuleTitle', { id: editingRuleId }) }}</template>
           <el-form label-position="top" :model="form">
-            <el-form-item label="Rule Type">
+            <el-form-item :label="t('rule.formRuleType')">
               <el-select v-model="form.rule_type" class="rule-config__full">
-        <el-option label="Obstruction Duration" value="obstruction_duration" />
-        <el-option label="Obstruction Area" value="obstruction_area" />
-        <el-option label="Litter" value="litter" />
-        <el-option label="Fire/Smoke" value="fire_smoke" />
+        <el-option :label="t('common.enum.ruleType.obstruction_duration')" value="obstruction_duration" />
+        <el-option :label="t('common.enum.ruleType.obstruction_area')" value="obstruction_area" />
+        <el-option :label="t('common.enum.ruleType.litter')" value="litter" />
+        <el-option :label="t('common.enum.ruleType.fire_smoke')" value="fire_smoke" />
               </el-select>
             </el-form-item>
-            <el-form-item label="ROI">
-              <el-select v-model="form.roi_id" class="rule-config__full" clearable placeholder="Optional ROI">
+            <el-form-item :label="t('rule.formRoi')">
+              <el-select v-model="form.roi_id" class="rule-config__full" clearable :placeholder="t('rule.phRoi')">
                 <el-option v-for="roi in rois" :key="roi.id" :label="roi.name" :value="roi.id" />
               </el-select>
             </el-form-item>
-            <el-form-item label="Threshold">
+            <el-form-item :label="t('rule.formThreshold')">
               <el-input-number v-model="form.threshold_config.threshold" :min="0" :step="0.05" class="rule-config__full" />
             </el-form-item>
-            <el-form-item label="Minimum Area">
+            <el-form-item :label="t('rule.formMinArea')">
               <el-input-number v-model="form.threshold_config.min_area" :min="0" class="rule-config__full" />
             </el-form-item>
-            <el-form-item label="Maximum Count">
+            <el-form-item :label="t('rule.formMaxCount')">
               <el-input-number v-model="form.threshold_config.max_count" :min="0" class="rule-config__full" />
             </el-form-item>
-            <el-form-item label="Duration Seconds">
+            <el-form-item :label="t('rule.formDurationSeconds')">
               <el-input-number v-model="form.threshold_config.duration_seconds" :min="0" class="rule-config__full" />
             </el-form-item>
-            <el-form-item label="Priority">
+            <el-form-item :label="t('rule.formPriority')">
               <el-input-number v-model="form.priority" :min="0" class="rule-config__full" />
             </el-form-item>
-            <el-form-item label="Enabled">
+            <el-form-item :label="t('rule.formEnabled')">
               <el-switch v-model="form.enabled" />
             </el-form-item>
             <div class="rule-config__form-actions">
-              <el-button @click="resetForm">Reset</el-button>
+              <el-button @click="resetForm">{{ t('common.button.reset') }}</el-button>
               <el-button type="primary" :loading="saving" @click="submitForm">
-                {{ editingRuleId === null ? 'Create' : 'Save' }}
+                {{ editingRuleId === null ? t('common.button.create') : t('common.button.save') }}
               </el-button>
             </div>
           </el-form>
@@ -88,10 +90,13 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { createRule, deleteRule, listRois, listRules, listScenes, updateRule } from '@/api/resources';
 import type { Roi, Rule, RuleCreatePayload, RuleThresholdConfig, RuleType, Scene } from '@/api/types';
+
+const { t } = useI18n();
 
 interface RuleForm {
   rule_type: RuleType;
@@ -175,19 +180,27 @@ function payloadFromForm(): RuleCreatePayload {
 
 function roiName(roiId: number | null): string {
   if (roiId === null) {
-    return 'All scene';
+    return t('rule.allScene');
   }
-  return rois.value.find((roi) => roi.id === roiId)?.name ?? `ROI #${roiId}`;
+  return rois.value.find((roi) => roi.id === roiId)?.name ?? `${t('common.table.roi')} #${roiId}`;
 }
 
 function formatThresholds(config: RuleThresholdConfig): string {
+  const labels: Partial<Record<keyof RuleThresholdConfig, string>> = {
+    threshold: t('rule.formThreshold'),
+    min_area: t('rule.formMinArea'),
+    max_count: t('rule.formMaxCount'),
+    duration_seconds: t('rule.formDurationSeconds'),
+  };
   const pairs = Object.entries(config).filter(([, value]) => value !== undefined);
-  return pairs.length === 0 ? 'None' : pairs.map(([key, value]) => `${key}: ${value}`).join(', ');
+  return pairs.length === 0
+    ? t('common.none')
+    : pairs.map(([key, value]) => `${labels[key as keyof RuleThresholdConfig] ?? key}: ${value}`).join(', ');
 }
 
 async function loadData(): Promise<void> {
   if (!Number.isInteger(cameraId.value)) {
-    ElMessage.error('Invalid camera ID.');
+    ElMessage.error(t('rule.toastInvalidId'));
     return;
   }
   loading.value = true;
@@ -198,7 +211,7 @@ async function loadData(): Promise<void> {
     const roiGroups = await Promise.all(sceneData.map((scene) => listRois(scene.id)));
     rois.value = roiGroups.flat();
   } catch {
-    ElMessage.error('Failed to load rules.');
+    ElMessage.error(t('rule.toastLoadFailed'));
   } finally {
     loading.value = false;
   }
@@ -210,16 +223,16 @@ async function submitForm(): Promise<void> {
     if (editingRuleId.value === null) {
       const created = await createRule(payloadFromForm());
       rules.value.push(created);
-      ElMessage.success('Rule created.');
+      ElMessage.success(t('rule.toastCreated'));
     } else {
       const { camera_id: _cameraId, ...updatePayload } = payloadFromForm();
       const updated = await updateRule(editingRuleId.value, updatePayload);
       rules.value = rules.value.map((rule) => (rule.id === updated.id ? updated : rule));
-      ElMessage.success('Rule updated.');
+      ElMessage.success(t('rule.toastUpdated'));
     }
     resetForm();
   } catch {
-    ElMessage.error('Failed to save rule.');
+    ElMessage.error(t('rule.toastSaveFailed'));
   } finally {
     saving.value = false;
   }
@@ -227,16 +240,16 @@ async function submitForm(): Promise<void> {
 
 async function confirmDeleteRule(rule: Rule): Promise<void> {
   try {
-    await ElMessageBox.confirm(`Delete rule #${rule.id}?`, 'Delete Rule', { type: 'warning' });
+    await ElMessageBox.confirm(t('rule.deleteConfirm', { id: rule.id }), t('rule.deleteTitle'), { type: 'warning' });
     await deleteRule(rule.id);
     rules.value = rules.value.filter((item) => item.id !== rule.id);
-    ElMessage.success('Rule deleted.');
+    ElMessage.success(t('rule.toastDeleted'));
     if (editingRuleId.value === rule.id) {
       resetForm();
     }
   } catch (error: unknown) {
     if (error === 'cancel') return;
-    ElMessage.error('Failed to delete rule.');
+    ElMessage.error(t('rule.toastDeleteFailed'));
   }
 }
 

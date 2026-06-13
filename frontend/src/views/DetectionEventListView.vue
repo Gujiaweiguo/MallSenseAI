@@ -1,40 +1,42 @@
 <template>
   <section class="page-card">
-    <h2 class="page-title">Detection Events</h2>
-    <p class="page-subtitle">Detection audit records loaded from GET /api/detection-events.</p>
+    <h2 class="page-title">{{ t('detection.title') }}</h2>
+    <p class="page-subtitle">{{ t('detection.subtitle') }}</p>
 
     <div class="filter-bar">
       <el-input-number
         v-model="cameraIdFilter"
-        placeholder="Camera ID"
+        :placeholder="t('detection.phCameraId')"
         :min="1"
         controls-position="right"
         style="width: 180px"
         @change="currentPage = 1"
       />
-      <el-select v-model="detectorTypeFilter" placeholder="Detector Type" clearable style="width: 200px" @change="currentPage = 1">
-        <el-option label="All" value="" />
-        <el-option label="YOLO" value="yolo" />
-        <el-option label="Image Compare" value="image_compare" />
-        <el-option label="Blue Box" value="blue_box" />
+      <el-select v-model="detectorTypeFilter" :placeholder="t('detection.phDetectorType')" clearable style="width: 200px" @change="currentPage = 1">
+        <el-option :label="t('common.all')" value="" />
+        <el-option :label="t('common.enum.detectorType.yolo')" value="yolo" />
+        <el-option :label="t('common.enum.detectorType.image_compare')" value="image_compare" />
+        <el-option :label="t('common.enum.detectorType.blue_box')" value="blue_box" />
       </el-select>
     </div>
 
     <el-table v-loading="loading" :data="pagedEvents" row-key="id" stripe @row-click="handleRowClick">
-      <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="camera_id" label="Camera ID" width="110" />
-      <el-table-column label="ROI ID" width="110">
-        <template #default="{ row }">{{ row.roi_id ?? 'N/A' }}</template>
+      <el-table-column prop="id" :label="t('common.table.id')" width="90" />
+      <el-table-column prop="camera_id" :label="t('common.table.cameraId')" width="110" />
+      <el-table-column :label="t('common.table.roiId')" width="110">
+        <template #default="{ row }">{{ row.roi_id ?? t('common.na') }}</template>
       </el-table-column>
-      <el-table-column prop="detector_type" label="Detector Type" min-width="160" />
-      <el-table-column label="Confidence" width="130">
+      <el-table-column :label="t('common.table.detectorType')" min-width="160">
+        <template #default="{ row }">{{ t('common.enum.detectorType.' + row.detector_type) }}</template>
+      </el-table-column>
+      <el-table-column :label="t('common.table.confidence')" width="130">
         <template #default="{ row }">{{ formatConfidence(row.confidence) }}</template>
       </el-table-column>
-      <el-table-column label="Detected At" min-width="190">
+      <el-table-column :label="t('common.table.detectedAt')" min-width="190">
         <template #default="{ row }">{{ formatDate(row.detected_at) }}</template>
       </el-table-column>
       <template #empty>
-        <span class="empty-note">No detection events found.</span>
+        <span class="empty-note">{{ t('common.empty.noDetectionEvents') }}</span>
       </template>
     </el-table>
 
@@ -48,14 +50,14 @@
       />
     </div>
 
-    <el-dialog v-model="dialogVisible" title="Detection Event Metadata" width="720px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="t('detection.metadataTitle')" width="720px" destroy-on-close>
       <template v-if="selectedEvent !== null">
         <div class="detection-events__meta-grid">
           <div v-for="entry in metadataEntries" :key="entry.key" class="detection-events__meta-row">
             <span class="detection-events__meta-key">{{ entry.key }}</span>
             <pre class="detection-events__meta-value">{{ entry.value }}</pre>
           </div>
-          <span v-if="metadataEntries.length === 0" class="empty-note">No event metadata available.</span>
+          <span v-if="metadataEntries.length === 0" class="empty-note">{{ t('common.empty.noEventMetadata') }}</span>
         </div>
       </template>
     </el-dialog>
@@ -65,11 +67,13 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { listDetectionEvents } from '@/api/resources';
 import type { DetectionEvent, DetectorType } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
+const { t } = useI18n();
 const events = ref<DetectionEvent[]>([]);
 const loading = ref(false);
 const currentPage = ref(1);
@@ -104,7 +108,7 @@ const metadataEntries = computed(() => {
 });
 
 function formatConfidence(value: number | null): string {
-  if (value === null) return 'N/A';
+  if (value === null) return t('common.na');
   return `${(value * 100).toFixed(1)}%`;
 }
 
@@ -122,7 +126,7 @@ async function loadEvents(): Promise<void> {
   try {
     events.value = await listDetectionEvents({ limit: DEFAULT_LIST_LIMIT });
   } catch {
-    ElMessage.error('Failed to load detection events.');
+    ElMessage.error(t('detection.toastLoadFailed'));
   } finally {
     loading.value = false;
   }
