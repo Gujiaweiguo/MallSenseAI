@@ -2,18 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 
 import { useAuthStore } from '@/auth/store';
-import AlertListView from '@/views/AlertListView.vue';
-import CameraDetailView from '@/views/CameraDetailView.vue';
-import CameraListView from '@/views/CameraListView.vue';
-import DashboardView from '@/views/DashboardView.vue';
-import DetectionEventListView from '@/views/DetectionEventListView.vue';
-import LoginView from '@/views/LoginView.vue';
-import NotificationConfigView from '@/views/NotificationConfigView.vue';
-import RuleConfigView from '@/views/RuleConfigView.vue';
-import SceneDetailView from '@/views/SceneDetailView.vue';
-import SceneListView from '@/views/SceneListView.vue';
-import UserListView from '@/views/UserListView.vue';
-import WorkOrderListView from '@/views/WorkOrderListView.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -27,7 +15,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: LoginView,
+    component: () => import('@/views/LoginView.vue'),
     meta: { title: 'Login' },
   },
   {
@@ -38,67 +26,67 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'dashboard',
-        component: DashboardView,
+        component: () => import('@/views/DashboardView.vue'),
         meta: { title: 'Dashboard' },
       },
       {
         path: 'cameras',
         name: 'cameras',
-        component: CameraListView,
+        component: () => import('@/views/CameraListView.vue'),
         meta: { title: 'Cameras' },
       },
       {
         path: 'cameras/:id',
         name: 'camera-detail',
-        component: CameraDetailView,
+        component: () => import('@/views/CameraDetailView.vue'),
         meta: { title: 'Camera Detail' },
       },
       {
         path: 'cameras/:id/rules',
         name: 'camera-rules',
-        component: RuleConfigView,
+        component: () => import('@/views/RuleConfigView.vue'),
         meta: { title: 'Rule Configuration' },
       },
       {
         path: 'scenes',
         name: 'scenes',
-        component: SceneListView,
+        component: () => import('@/views/SceneListView.vue'),
         meta: { title: 'Scenes' },
       },
       {
         path: 'scenes/:id',
         name: 'scene-detail',
-        component: SceneDetailView,
+        component: () => import('@/views/SceneDetailView.vue'),
         meta: { title: 'Scene Detail' },
       },
       {
         path: 'alerts',
         name: 'alerts',
-        component: AlertListView,
+        component: () => import('@/views/AlertListView.vue'),
         meta: { title: 'Alerts' },
       },
       {
         path: 'detection-events',
         name: 'detection-events',
-        component: DetectionEventListView,
+        component: () => import('@/views/DetectionEventListView.vue'),
         meta: { title: 'Detection Events' },
       },
       {
         path: 'work-orders',
         name: 'work-orders',
-        component: WorkOrderListView,
+        component: () => import('@/views/WorkOrderListView.vue'),
         meta: { title: 'Work Orders' },
       },
       {
         path: 'notifications',
         name: 'notifications',
-        component: NotificationConfigView,
+        component: () => import('@/views/NotificationConfigView.vue'),
         meta: { title: 'Notifications' },
       },
       {
         path: 'users',
         name: 'users',
-        component: UserListView,
+        component: () => import('@/views/UserListView.vue'),
         meta: { title: 'Users', adminOnly: true },
       },
     ],

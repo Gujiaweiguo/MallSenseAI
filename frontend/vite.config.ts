@@ -10,6 +10,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          'vendor-element': ['element-plus', '@element-plus/icons-vue'],
+        },
+      },
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5373,
