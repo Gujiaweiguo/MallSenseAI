@@ -21,7 +21,27 @@
       <el-button :loading="exporting" style="margin-left: auto" @click="handleExport">Export CSV</el-button>
     </div>
 
-    <el-table v-loading="loading" :data="pagedAlerts" row-key="id" stripe @row-click="handleRowClick">
+    <div v-if="selectedAlerts.length > 0" class="batch-bar">
+      <span>{{ selectedAlerts.length }} selected</span>
+      <el-button type="success" size="small" :loading="batching" @click="handleBatchConfirm">
+        Batch Confirm
+      </el-button>
+      <el-button type="primary" size="small" :loading="batching" @click="handleBatchResolve">
+        Batch Resolve
+      </el-button>
+      <el-button size="small" @click="clearSelection">Clear</el-button>
+    </div>
+
+    <el-table
+      ref="tableRef"
+      v-loading="loading"
+      :data="pagedAlerts"
+      row-key="id"
+      stripe
+      @row-click="handleRowClick"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="45" />
       <el-table-column prop="id" label="ID" width="90" />
       <el-table-column label="Camera" width="140">
         <template #default="{ row }">
@@ -83,6 +103,7 @@
 
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus';
+import type { TableInstance } from 'element-plus';
 import { computed, onMounted, ref, watch } from 'vue';
 
 import AlertDetailDrawer from '@/components/AlertDetailDrawer.vue';
@@ -93,6 +114,7 @@ import {
   markAlertFalsePositive,
   resolveAlert,
   exportAlerts,
+  batchAlerts,
 } from '@/api/resources';
 import type { Alert, Camera } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
@@ -104,6 +126,9 @@ const cameras = ref<Camera[]>([]);
 const loading = ref(false);
 const exporting = ref(false);
 const acting = ref<number | null>(null);
+const batching = ref(false);
+const tableRef = ref<TableInstance>();
+const selectedAlerts = ref<Alert[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const severityFilter = ref('');
@@ -242,6 +267,64 @@ async function handleResolve(id: number): Promise<void> {
   }
 }
 
+function handleSelectionChange(rows: Alert[]): void {
+  selectedAlerts.value = rows;
+}
+
+function clearSelection(): void {
+  tableRef.value?.clearSelection();
+}
+
+async function handleBatchConfirm(): Promise<void> {
+  const ids = selectedAlerts.value.map((a) => a.id);
+  try {
+    await ElMessageBox.confirm(`Confirm ${ids.length} alert(s)?`, 'Batch Confirm', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      type: 'warning',
+    });
+    batching.value = true;
+    const result = await batchAlerts(ids, 'confirm');
+    ElMessage.success(`${result.processed} alert(s) confirmed.`);
+    if (result.failed.length > 0) {
+      ElMessage.warning(`${result.failed.length} alert(s) skipped (invalid state).`);
+    }
+    clearSelection();
+    await loadAlerts();
+  } catch (err: unknown) {
+    if (err !== 'cancel' && err instanceof Error && err.message !== 'cancel') {
+      ElMessage.error('Batch confirm failed.');
+    }
+  } finally {
+    batching.value = false;
+  }
+}
+
+async function handleBatchResolve(): Promise<void> {
+  const ids = selectedAlerts.value.map((a) => a.id);
+  try {
+    await ElMessageBox.confirm(`Resolve ${ids.length} alert(s)?`, 'Batch Resolve', {
+      confirmButtonText: 'Resolve',
+      cancelButtonText: 'Cancel',
+      type: 'warning',
+    });
+    batching.value = true;
+    const result = await batchAlerts(ids, 'resolve');
+    ElMessage.success(`${result.processed} alert(s) resolved.`);
+    if (result.failed.length > 0) {
+      ElMessage.warning(`${result.failed.length} alert(s) skipped (invalid state).`);
+    }
+    clearSelection();
+    await loadAlerts();
+  } catch (err: unknown) {
+    if (err !== 'cancel' && err instanceof Error && err.message !== 'cancel') {
+      ElMessage.error('Batch resolve failed.');
+    }
+  } finally {
+    batching.value = false;
+  }
+}
+
 watch(() => alertWs.lastEvent.value, (event) => {
   if (!event) return;
   if (event.event_type === 'created') {
@@ -263,3 +346,16 @@ onMounted(() => {
   void loadAlerts();
 });
 </script>
+
+<style scoped>
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: var(--el-color-primary-light-9, #ecf5ff);
+  border-radius: 6px;
+  font-size: 14px;
+}
+</style>

@@ -172,6 +172,87 @@ class TestAlerts:
         assert resp.status_code == 401
 
 
+class TestBatchAlerts:
+    def _create_alerts(self, db, camera_id, count, status="pending"):
+        for _ in range(count):
+            db.add(Alert(
+                camera_id=camera_id,
+                roi_id=None,
+                rule_id=None,
+                alert_type="obstruction_area",
+                severity="high",
+                status=status,
+                evidence_image_path=None,
+                detected_at=datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc),
+                resolved_at=None,
+                event_metadata={},
+            ))
+        db.commit()
+
+    def test_batch_confirm(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        self._create_alerts(db, cam["id"], 3)
+        alerts = db.query(Alert).filter(Alert.camera_id == cam["id"]).all()
+        ids = [a.id for a in alerts]
+        db.close()
+
+        resp = client.post("/api/alerts/batch", json={"alert_ids": ids, "action": "confirm"}, headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["processed"] == 3
+        assert data["failed"] == []
+
+    def test_batch_resolve(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        self._create_alerts(db, cam["id"], 2, status="confirmed")
+        alerts = db.query(Alert).filter(Alert.camera_id == cam["id"]).all()
+        ids = [a.id for a in alerts]
+        db.close()
+
+        resp = client.post("/api/alerts/batch", json={"alert_ids": ids, "action": "resolve"}, headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["processed"] == 2
+        assert data["failed"] == []
+
+    def test_batch_mixed_states(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        # 1 pending (confirmable), 1 resolved (not confirmable)
+        db.add(Alert(
+            camera_id=cam["id"], roi_id=None, rule_id=None, alert_type="obstruction_area",
+            severity="high", status="pending", evidence_image_path=None,
+            detected_at=datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc),
+            resolved_at=None, event_metadata={},
+        ))
+        db.add(Alert(
+            camera_id=cam["id"], roi_id=None, rule_id=None, alert_type="obstruction_area",
+            severity="high", status="resolved", evidence_image_path=None,
+            detected_at=datetime(2026, 6, 1, 11, 0, 0, tzinfo=timezone.utc),
+            resolved_at=None, event_metadata={},
+        ))
+        db.commit()
+        alerts = db.query(Alert).filter(Alert.camera_id == cam["id"]).order_by(Alert.id).all()
+        ids = [a.id for a in alerts]
+        db.close()
+
+        resp = client.post("/api/alerts/batch", json={"alert_ids": ids, "action": "confirm"}, headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["processed"] == 1
+        assert len(data["failed"]) == 1
+
+    def test_batch_invalid_action(self, client: TestClient, auth_headers: dict):
+        resp = client.post("/api/alerts/batch", json={"alert_ids": [1], "action": "delete"}, headers=auth_headers)
+        assert resp.status_code == 422
+
+    def test_batch_requires_auth(self, client: TestClient):
+        resp = client.post("/api/alerts/batch", json={"alert_ids": [1], "action": "confirm"})
+        assert resp.status_code == 401
+
+
 class TestRules:
     def test_create_and_list_rule(self, client: TestClient, auth_headers: dict):
         cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()

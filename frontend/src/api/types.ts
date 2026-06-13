@@ -239,3 +239,10 @@ export interface NotificationChannelUpdatePayload {
   config?: Record<string, unknown>;
   enabled?: boolean;
 }
+
+export type BatchAlertAction = 'confirm' | 'false_positive' | 'resolve';
+
+export interface BatchAlertResponse {
+  processed: number;
+  failed: { id: number; error: string }[];
+}

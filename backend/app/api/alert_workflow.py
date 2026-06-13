@@ -38,6 +38,21 @@ class TransitionRequest(BaseModel):
     notes: str | None = None
 
 
+class BatchAlertRequest(BaseModel):
+    alert_ids: list[int]
+    action: str  # "confirm" | "false_positive" | "resolve"
+
+
+class BatchFailureItem(BaseModel):
+    id: int
+    error: str
+
+
+class BatchAlertResponse(BaseModel):
+    processed: int
+    failed: list[BatchFailureItem]
+
+
 # ------------------------------------------------------------------
 # Alert lifecycle endpoints
 # ------------------------------------------------------------------
@@ -94,6 +109,51 @@ def resolve_alert(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc
+
+
+# ------------------------------------------------------------------
+# Batch alert endpoints
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/alerts/batch",
+    response_model=BatchAlertResponse,
+    dependencies=[Depends(require_role(UserRole.operator))],
+)
+def batch_alert_action(
+    payload: BatchAlertRequest,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Apply an action (confirm, false_positive, resolve) to multiple alerts.
+
+    Each alert is processed independently; failures for individual alerts
+    (e.g. invalid state transition) are collected and returned without
+    aborting the entire batch.
+    """
+    valid_actions = {"confirm", "false_positive", "resolve"}
+    if payload.action not in valid_actions:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid action '{payload.action}'. Must be one of {valid_actions}",
+        )
+
+    processed = 0
+    failed: list[dict] = []
+
+    for alert_id in payload.alert_ids:
+        try:
+            if payload.action == "confirm":
+                AlertService.confirm_alert(alert_id, db)
+            elif payload.action == "false_positive":
+                AlertService.mark_false_positive(alert_id, db, reason="")
+            elif payload.action == "resolve":
+                AlertService.resolve_alert(alert_id, db, notes="")
+            processed += 1
+        except (InvalidAlertTransition, Exception) as exc:  # noqa: BLE001
+            failed.append({"id": alert_id, "error": str(exc)})
+
+    return {"processed": processed, "failed": failed}
 
 
 # ------------------------------------------------------------------

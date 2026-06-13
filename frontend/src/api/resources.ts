@@ -1,6 +1,8 @@
 import client from './client';
 import type {
   Alert,
+  BatchAlertAction,
+  BatchAlertResponse,
   Camera,
   DashboardStats,
   DetectionEvent,
@@ -181,6 +183,11 @@ export async function listDetectionEvents(params?: PaginatedQuery & {
 export async function exportAlerts(params: { severity?: string; status?: string } = {}): Promise<Blob> {
   const response = await client.get('/alerts/export', { params, responseType: 'blob' });
   return response.data;
+}
+
+export async function batchAlerts(alertIds: number[], action: BatchAlertAction): Promise<BatchAlertResponse> {
+  const { data } = await client.post<BatchAlertResponse>('/alerts/batch', { alert_ids: alertIds, action });
+  return data;
 }
 
 export async function listNotificationGroups(params?: PaginatedQuery): Promise<NotificationGroup[]> {
