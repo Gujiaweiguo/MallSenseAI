@@ -16,6 +16,7 @@ from backend.app.models import (
     Camera,
     CameraStatus,
     Scene,
+    WorkerHeartbeat,
     WorkOrder,
     WorkOrderStatus,
 )
@@ -118,4 +119,56 @@ def get_dashboard_stats(
         work_orders_open=wo_status_counts.get(WorkOrderStatus.open, 0),
         work_orders_in_progress=wo_status_counts.get(WorkOrderStatus.in_progress, 0),
         work_orders_closed=wo_status_counts.get(WorkOrderStatus.closed, 0),
+    )
+
+
+HEARTBEAT_STALE_SECONDS = 120
+
+
+class WorkerStatusResponse(BaseModel):
+    status: str
+    last_run_at: datetime | None
+    total_inspections: int
+    successful: int
+    failed: int
+    cameras_active: int
+    avg_duration_ms: float
+    updated_at: datetime | None
+    is_stale: bool
+
+
+@router.get("/dashboard/worker-status", response_model=WorkerStatusResponse)
+def get_worker_status(
+    db: Session = Depends(get_db),
+    _user=Depends(require_role("viewer")),
+) -> WorkerStatusResponse:
+    row = db.get(WorkerHeartbeat, 1)
+    if row is None:
+        return WorkerStatusResponse(
+            status="offline",
+            last_run_at=None,
+            total_inspections=0,
+            successful=0,
+            failed=0,
+            cameras_active=0,
+            avg_duration_ms=0.0,
+            updated_at=None,
+            is_stale=True,
+        )
+
+    now = datetime.now(timezone.utc)
+    updated = row.updated_at.replace(tzinfo=timezone.utc) if row.updated_at.tzinfo is None else row.updated_at
+    is_stale = (now - updated) > timedelta(seconds=HEARTBEAT_STALE_SECONDS)
+    status = "offline" if is_stale and row.status == "running" else row.status
+
+    return WorkerStatusResponse(
+        status=status,
+        last_run_at=row.last_run_at,
+        total_inspections=row.total_inspections,
+        successful=row.successful,
+        failed=row.failed,
+        cameras_active=row.cameras_active,
+        avg_duration_ms=row.avg_duration_ms,
+        updated_at=row.updated_at,
+        is_stale=is_stale,
     )

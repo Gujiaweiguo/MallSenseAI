@@ -25,6 +25,7 @@ import type {
   User,
   UserCreatePayload,
   UserUpdatePayload,
+  WorkerStatus,
   WorkOrder,
 } from './types';
 
@@ -35,6 +36,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 export async function getAlertTrend(days: number = 7): Promise<AlertTrendPoint[]> {
   const response = await client.get<AlertTrendPoint[]>('/dashboard/alert-trend', { params: { days } });
+  return response.data;
+}
+
+export async function getWorkerStatus(): Promise<WorkerStatus> {
+  const response = await client.get<WorkerStatus>('/dashboard/worker-status');
   return response.data;
 }
 

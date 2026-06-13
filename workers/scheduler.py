@@ -12,11 +12,11 @@ from sqlalchemy import select
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.db.session import SessionLocal
-from backend.app.models.entities import Camera, CameraStatus
+from backend.app.models.entities import Camera, CameraStatus, WorkerHeartbeat
 
 from workers.executor import BatchExecutor
 from workers.metrics import WorkerMetricsCollector
-from workers.models import ScheduledCamera, WorkerStatus
+from workers.models import ScheduledCamera, WorkerMetrics, WorkerStatus
 
 if TYPE_CHECKING:
     from workers.pipeline import DetectionPipeline
@@ -94,6 +94,7 @@ class InspectionScheduler:
         logger.info("Inspection scheduler starting")
         try:
             await self.sync_cameras_from_db()
+            await self._write_heartbeat()
             while not self._stop_event.is_set():
                 await self._tick()
                 with suppress(asyncio.TimeoutError):
@@ -106,12 +107,14 @@ class InspectionScheduler:
             raise
         except Exception:
             self.status = WorkerStatus.error
+            await self._write_heartbeat()
             logger.exception("Inspection scheduler stopped after an unexpected error")
             raise
         finally:
             await self._drain_running_tasks()
             if self.status != WorkerStatus.error:
                 self.status = WorkerStatus.stopped
+            await self._write_heartbeat()
             logger.info("Inspection scheduler stopped")
 
     async def stop(self) -> None:
@@ -120,6 +123,7 @@ class InspectionScheduler:
             self.status = WorkerStatus.stopping
         self._stop_event.set()
         await self._drain_running_tasks()
+        await self._write_heartbeat()
 
     async def sync_cameras_from_db(self) -> None:
         """Synchronize in-memory schedule with active/degraded DB cameras."""
@@ -186,6 +190,35 @@ class InspectionScheduler:
             else:
                 scheduled.consecutive_failures += 1
                 scheduled.next_run_at = now + self._backoff_for(scheduled.consecutive_failures)
+
+        await self._write_heartbeat()
+
+    async def _write_heartbeat(self) -> None:
+        """Persist current worker metrics to the database for cross-process visibility."""
+        m = await self.metrics.get_metrics()
+        await asyncio.to_thread(self._persist_heartbeat, self.status.value, m)
+
+    def _persist_heartbeat(self, status: str, m: WorkerMetrics) -> None:
+        db = SessionLocal()
+        try:
+            row = db.get(WorkerHeartbeat, 1)
+            if row is None:
+                row = WorkerHeartbeat(id=1, status=status)
+                db.add(row)
+            else:
+                row.status = status
+            row.last_run_at = m.last_run_at
+            row.total_inspections = m.total_inspections
+            row.successful = m.successful
+            row.failed = m.failed
+            row.cameras_active = m.cameras_active
+            row.avg_duration_ms = m.avg_duration_ms
+            db.commit()
+        except Exception:
+            logger.warning("Failed to write worker heartbeat", exc_info=True)
+            db.rollback()
+        finally:
+            db.close()
 
     async def _drain_running_tasks(self) -> None:
         if not self._tasks:

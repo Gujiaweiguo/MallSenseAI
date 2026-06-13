@@ -48,6 +48,18 @@ test('dashboard renders stats and charts', async ({ page }) => {
     { date: '2026-06-09', count: 2 },
   ]);
 
+  await mockApi(page, 'GET', '/dashboard/worker-status', {
+    status: 'offline',
+    last_run_at: null,
+    total_inspections: 0,
+    successful: 0,
+    failed: 0,
+    cameras_active: 0,
+    avg_duration_ms: 0,
+    updated_at: null,
+    is_stale: true,
+  });
+
   await page.goto('/');
 
   await expect(page.locator('.main-layout__title')).toHaveText('Dashboard');

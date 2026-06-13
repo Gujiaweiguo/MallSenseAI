@@ -263,3 +263,17 @@ class DetectionEvent(Base):
 
     camera: Mapped[Camera] = relationship(back_populates="detection_events")
     roi: Mapped[ROI | None] = relationship(back_populates="detection_events")
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = "worker_heartbeats"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="idle")
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    total_inspections: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    successful: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cameras_active: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    avg_duration_ms: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)

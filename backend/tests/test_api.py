@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
-from backend.app.models import Alert, Camera, DetectionEvent, DetectorType
+from backend.app.models import Alert, Camera, DetectionEvent, DetectorType, WorkerHeartbeat
 from backend.tests.conftest import TestingSessionLocal
 
 # ---------------------------------------------------------------------------
@@ -593,3 +593,42 @@ class TestDashboardTrend:
         assert len(data) >= 1
         today_entry = data[-1]
         assert today_entry["count"] >= 3
+
+
+# ---------------------------------------------------------------------------
+# Worker Status
+# ---------------------------------------------------------------------------
+
+
+class TestWorkerStatus:
+    def test_status_when_no_heartbeat(self, client: TestClient, auth_headers: dict):
+        resp = client.get("/api/dashboard/worker-status", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "offline"
+        assert data["is_stale"] is True
+        assert data["total_inspections"] == 0
+
+    def test_status_with_active_heartbeat(self, client: TestClient, auth_headers: dict):
+        db = TestingSessionLocal()
+        hb = WorkerHeartbeat(
+            id=1,
+            status="running",
+            last_run_at=datetime.now(timezone.utc),
+            total_inspections=100,
+            successful=95,
+            failed=5,
+            cameras_active=21,
+            avg_duration_ms=340.0,
+        )
+        db.add(hb)
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/dashboard/worker-status", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "running"
+        assert data["is_stale"] is False
+        assert data["total_inspections"] == 100
+        assert data["successful"] == 95

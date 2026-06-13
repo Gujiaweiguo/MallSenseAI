@@ -69,6 +69,38 @@
         </el-col>
       </el-row>
 
+      <!-- Worker Status Banner -->
+      <el-card v-if="workerStatus !== null" shadow="never" class="dashboard-view__worker-card">
+        <div class="worker-status">
+          <div class="worker-status__indicator">
+            <span class="worker-status__dot" :class="workerDotClass" />
+            <span class="worker-status__label">{{ workerStatusLabel }}</span>
+          </div>
+          <div class="worker-status__stats">
+            <div class="worker-status__stat">
+              <span class="worker-status__stat-label">{{ t('dashboard.workerLastRun') }}</span>
+              <span class="worker-status__stat-value">{{ workerLastRun }}</span>
+            </div>
+            <div class="worker-status__stat">
+              <span class="worker-status__stat-label">{{ t('dashboard.workerInspections') }}</span>
+              <span class="worker-status__stat-value">{{ workerStatus.total_inspections }}</span>
+            </div>
+            <div class="worker-status__stat">
+              <span class="worker-status__stat-label">{{ t('dashboard.workerSuccessRate') }}</span>
+              <span class="worker-status__stat-value">{{ workerSuccessRate }}</span>
+            </div>
+            <div class="worker-status__stat">
+              <span class="worker-status__stat-label">{{ t('dashboard.workerCameras') }}</span>
+              <span class="worker-status__stat-value">{{ workerStatus.cameras_active }}</span>
+            </div>
+            <div class="worker-status__stat">
+              <span class="worker-status__stat-label">{{ t('dashboard.workerAvgDuration') }}</span>
+              <span class="worker-status__stat-value">{{ Math.round(workerStatus.avg_duration_ms) }}ms</span>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
       <!-- Charts Row -->
       <el-row :gutter="16" class="dashboard-view__row">
         <el-col :xs="24" :lg="10">
@@ -154,8 +186,8 @@ import {
 } from 'echarts/components';
 import VChart from 'vue-echarts';
 
-import { getAlertTrend, getDashboardStats, listAlerts } from '@/api/resources';
-import type { Alert, AlertSeverity, AlertStatus, AlertTrendPoint, DashboardStats } from '@/api/types';
+import { getAlertTrend, getDashboardStats, getWorkerStatus, listAlerts } from '@/api/resources';
+import type { Alert, AlertSeverity, AlertStatus, AlertTrendPoint, DashboardStats, WorkerStatus } from '@/api/types';
 import { RECENT_ALERTS_COUNT } from '@/utils/constants';
 
 use([CanvasRenderer, PieChart, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent]);
@@ -191,6 +223,7 @@ const loading = ref(true);
 const stats = ref<DashboardStats>({ ...FALLBACK_STATS });
 const recentAlerts = ref<Alert[]>([]);
 const trendData = ref<AlertTrendPoint[]>([]);
+const workerStatus = ref<WorkerStatus | null>(null);
 
 const severityTotal = computed(() =>
   Object.values(stats.value.alerts_by_severity).reduce((sum, n) => sum + n, 0),
@@ -199,6 +232,44 @@ const severityTotal = computed(() =>
 const trendTotal = computed(() =>
   trendData.value.reduce((sum, p) => sum + p.count, 0),
 );
+
+const workerDotClass = computed(() => {
+  if (workerStatus.value === null) return 'worker-status__dot--offline';
+  const s = workerStatus.value;
+  if (s.is_stale || s.status === 'offline') return 'worker-status__dot--stale';
+  if (s.status === 'running') return 'worker-status__dot--running';
+  if (s.status === 'error') return 'worker-status__dot--error';
+  return 'worker-status__dot--stopped';
+});
+
+const workerStatusLabel = computed(() => {
+  if (workerStatus.value === null) return t('dashboard.workerOffline');
+  const s = workerStatus.value;
+  if (s.is_stale && s.status === 'running') return t('dashboard.workerStale');
+  const keyMap: Record<string, string> = {
+    running: 'dashboard.workerRunning',
+    stopped: 'dashboard.workerStopped',
+    error: 'dashboard.workerError',
+    offline: 'dashboard.workerOffline',
+    idle: 'dashboard.workerOffline',
+  };
+  return t(keyMap[s.status] ?? 'dashboard.workerOffline');
+});
+
+const workerLastRun = computed(() => {
+  if (workerStatus.value === null || workerStatus.value.last_run_at === null) {
+    return t('dashboard.workerNever');
+  }
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium' }).format(
+    new Date(workerStatus.value.last_run_at),
+  );
+});
+
+const workerSuccessRate = computed(() => {
+  if (workerStatus.value === null || workerStatus.value.total_inspections === 0) return '—';
+  const rate = (workerStatus.value.successful / workerStatus.value.total_inspections) * 100;
+  return `${rate.toFixed(1)}%`;
+});
 
 // --- ECharts options ---
 
@@ -293,14 +364,16 @@ function formatDateTime(iso: string): string {
 
 onMounted(async () => {
   try {
-    const [statsData, alertsData, trend] = await Promise.all([
+    const [statsData, alertsData, trend, ws] = await Promise.all([
       getDashboardStats(),
       listAlerts({ limit: RECENT_ALERTS_COUNT }),
       getAlertTrend(7),
+      getWorkerStatus(),
     ]);
     stats.value = statsData;
     recentAlerts.value = alertsData;
     trendData.value = trend;
+    workerStatus.value = ws;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : t('dashboard.loadFailed');
     ElMessage.error(message);
@@ -327,6 +400,62 @@ onMounted(async () => {
 
 .dashboard-view__row {
   margin-bottom: 20px;
+}
+
+.dashboard-view__worker-card {
+  margin-bottom: 20px;
+}
+
+.worker-status {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.worker-status__indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  min-width: 120px;
+}
+
+.worker-status__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.worker-status__dot--running { background: #67c23a; box-shadow: 0 0 6px #67c23a88; }
+.worker-status__dot--stopped { background: #909399; }
+.worker-status__dot--error { background: #f56c6c; }
+.worker-status__dot--stale { background: #e6a23c; }
+.worker-status__dot--offline { background: #c0c4cc; }
+
+.worker-status__stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.worker-status__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.worker-status__stat-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.worker-status__stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .stat-card {

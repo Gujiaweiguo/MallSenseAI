@@ -261,3 +261,15 @@ export interface AlertTrendPoint {
   date: string;
   count: number;
 }
+
+export interface WorkerStatus {
+  status: string;
+  last_run_at: string | null;
+  total_inspections: number;
+  successful: number;
+  failed: number;
+  cameras_active: number;
+  avg_duration_ms: number;
+  updated_at: string | null;
+  is_stale: boolean;
+}
