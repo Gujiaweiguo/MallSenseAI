@@ -256,3 +256,8 @@ export interface BatchAlertResponse {
   processed: number;
   failed: { id: number; error: string }[];
 }
+
+export interface AlertTrendPoint {
+  date: string;
+  count: number;
+}

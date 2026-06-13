@@ -186,6 +186,8 @@
     "nOpen": "{n} open",
     "nInProgress": "{n} in progress",
     "severityBreakdown": "Alert Severity Breakdown",
+    "severityPie": "Severity Distribution",
+    "alertTrend": "Alert Trend (Last 7 Days)",
     "recentAlerts": "Recent Alerts",
     "loadFailed": "Failed to load dashboard data"
   },

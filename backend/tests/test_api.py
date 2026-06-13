@@ -470,3 +470,101 @@ class TestDetectionEvents:
     def test_requires_auth(self, client: TestClient):
         resp = client.get("/api/detection-events")
         assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Alert Evidence Image
+# ---------------------------------------------------------------------------
+
+
+class TestAlertEvidence:
+    def test_evidence_not_found_no_path(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        alert = Alert(
+            camera_id=cam["id"],
+            roi_id=None,
+            rule_id=None,
+            alert_type="obstruction_area",
+            severity="high",
+            status="pending",
+            evidence_image_path=None,
+            detected_at=datetime.now(timezone.utc),
+            resolved_at=None,
+            event_metadata={},
+        )
+        db.add(alert)
+        db.commit()
+        db.refresh(alert)
+        alert_id = alert.id
+        db.close()
+
+        resp = client.get(f"/api/alerts/{alert_id}/evidence", headers=auth_headers)
+        assert resp.status_code == 404
+
+    def test_evidence_serves_file(self, client: TestClient, auth_headers: dict, tmp_path):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        evidence_file = tmp_path / "test_evidence.jpg"
+        evidence_file.write_bytes(b"\xff\xd8\xff\xe0fake-jpeg-data")
+
+        db = TestingSessionLocal()
+        alert = Alert(
+            camera_id=cam["id"],
+            roi_id=None,
+            rule_id=None,
+            alert_type="obstruction_area",
+            severity="high",
+            status="pending",
+            evidence_image_path=str(evidence_file),
+            detected_at=datetime.now(timezone.utc),
+            resolved_at=None,
+            event_metadata={},
+        )
+        db.add(alert)
+        db.commit()
+        db.refresh(alert)
+        alert_id = alert.id
+        db.close()
+
+        resp = client.get(f"/api/alerts/{alert_id}/evidence", headers=auth_headers)
+        assert resp.status_code == 200
+        assert "image" in resp.headers.get("content-type", "")
+
+
+# ---------------------------------------------------------------------------
+# Dashboard Trend
+# ---------------------------------------------------------------------------
+
+
+class TestDashboardTrend:
+    def test_trend_empty(self, client: TestClient, auth_headers: dict):
+        resp = client.get("/api/dashboard/alert-trend", headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_trend_returns_daily_counts(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        now = datetime.now(timezone.utc)
+        for i in range(3):
+            db.add(Alert(
+                camera_id=cam["id"],
+                roi_id=None,
+                rule_id=None,
+                alert_type="obstruction_area",
+                severity="high",
+                status="pending",
+                evidence_image_path=None,
+                detected_at=now,
+                resolved_at=None,
+                event_metadata={},
+            ))
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/dashboard/alert-trend?days=7", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) >= 1
+        today_entry = data[-1]
+        assert today_entry["count"] >= 3

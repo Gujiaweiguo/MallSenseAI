@@ -186,6 +186,8 @@
     "nOpen": "{n} 待处理",
     "nInProgress": "{n} 进行中",
     "severityBreakdown": "告警严重度分布",
+    "severityPie": "严重度占比",
+    "alertTrend": "告警趋势（近7天）",
     "recentAlerts": "最近告警",
     "loadFailed": "加载仪表盘数据失败"
   },

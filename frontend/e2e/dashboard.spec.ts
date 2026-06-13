@@ -23,7 +23,7 @@ test.beforeEach(async ({ page }) => {
   ]);
 });
 
-test('dashboard renders stats and severity breakdown', async ({ page }) => {
+test('dashboard renders stats and charts', async ({ page }) => {
   await mockApi(page, 'GET', '/dashboard/stats', {
     cameras_total: 21,
     cameras_active: 18,
@@ -42,9 +42,17 @@ test('dashboard renders stats and severity breakdown', async ({ page }) => {
     work_orders_closed: 2,
   });
 
+  await mockApi(page, 'GET', '/dashboard/alert-trend', [
+    { date: '2026-06-07', count: 3 },
+    { date: '2026-06-08', count: 5 },
+    { date: '2026-06-09', count: 2 },
+  ]);
+
   await page.goto('/');
 
   await expect(page.locator('.main-layout__title')).toHaveText('Dashboard');
+
+  // Stat cards
   await expect(page.locator('.stat-card').nth(0)).toContainText('Cameras');
   await expect(page.locator('.stat-card').nth(0)).toContainText('21');
   await expect(page.locator('.stat-card').nth(1)).toContainText('Scenes');
@@ -53,11 +61,12 @@ test('dashboard renders stats and severity breakdown', async ({ page }) => {
   await expect(page.locator('.stat-card').nth(2)).toContainText('10');
   await expect(page.locator('.stat-card').nth(3)).toContainText('Work Orders');
   await expect(page.locator('.stat-card').nth(3)).toContainText('5');
-  await expect(page.locator('.severity-chart')).toContainText('Low');
-  await expect(page.locator('.severity-chart')).toContainText('2');
-  await expect(page.locator('.severity-chart')).toContainText('Medium');
-  await expect(page.locator('.severity-chart')).toContainText('3');
-  await expect(page.locator('.severity-chart')).toContainText('High');
-  await expect(page.locator('.severity-chart')).toContainText('Critical');
-  await expect(page.locator('.dashboard-view__section').first()).toContainText('Alert Severity Breakdown');
+
+  // Chart cards with ECharts canvas
+  await expect(page.locator('.dashboard-view__chart-card').nth(0)).toContainText('Severity Distribution');
+  await expect(page.locator('.dashboard-view__chart-card').nth(1)).toContainText('Alert Trend');
+  await expect(page.locator('.dashboard-view__chart canvas')).toHaveCount(2);
+
+  // Recent alerts table
+  await expect(page.locator('.dashboard-view__section').last()).toContainText('Recent Alerts');
 });

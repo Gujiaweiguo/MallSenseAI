@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -38,6 +40,31 @@ class DashboardStats(BaseModel):
     work_orders_open: int
     work_orders_in_progress: int
     work_orders_closed: int
+
+
+class TrendPoint(BaseModel):
+    date: str
+    count: int
+
+
+@router.get("/dashboard/alert-trend", response_model=list[TrendPoint])
+def get_alert_trend(
+    days: int = Query(default=7, ge=1, le=90),
+    db: Session = Depends(get_db),
+    _user=Depends(require_role("viewer")),
+) -> list[TrendPoint]:
+    """Daily alert counts for the last N days."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    rows = db.execute(
+        select(
+            func.date(Alert.detected_at).label("day"),
+            func.count(Alert.id).label("cnt"),
+        )
+        .where(Alert.detected_at >= cutoff)
+        .group_by("day")
+        .order_by("day")
+    ).all()
+    return [TrendPoint(date=str(row.day), count=row.cnt) for row in rows]
 
 
 @router.get("/dashboard/stats", response_model=DashboardStats)

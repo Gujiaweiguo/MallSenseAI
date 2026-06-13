@@ -69,30 +69,37 @@
         </el-col>
       </el-row>
 
-      <!-- Alert Severity Breakdown -->
-      <el-card shadow="never" class="dashboard-view__section">
-        <template #header>
-          <span>{{ t('dashboard.severityBreakdown') }}</span>
-        </template>
-        <div class="severity-chart">
-          <div
-            v-for="sev in severityEntries"
-            :key="sev.key"
-            class="severity-chart__row"
-          >
-            <span class="severity-chart__label">{{ sev.label }}</span>
-            <div class="severity-chart__bar-wrapper">
-              <div
-                class="severity-chart__bar"
-                :class="`severity-chart__bar--${sev.key}`"
-                :style="{ width: sev.percent + '%' }"
-              />
-            </div>
-            <span class="severity-chart__count">{{ sev.count }}</span>
-          </div>
-          <p v-if="severityTotal === 0" class="severity-chart__empty">{{ t('common.empty.noAlertsRecorded') }}</p>
-        </div>
-      </el-card>
+      <!-- Charts Row -->
+      <el-row :gutter="16" class="dashboard-view__row">
+        <el-col :xs="24" :lg="10">
+          <el-card shadow="never" class="dashboard-view__chart-card">
+            <template #header>
+              <span>{{ t('dashboard.severityPie') }}</span>
+            </template>
+            <v-chart
+              v-if="severityTotal > 0"
+              class="dashboard-view__chart"
+              :option="severityPieOption"
+              autoresize
+            />
+            <el-empty v-else :description="t('common.empty.noAlertsRecorded')" />
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :lg="14">
+          <el-card shadow="never" class="dashboard-view__chart-card">
+            <template #header>
+              <span>{{ t('dashboard.alertTrend') }}</span>
+            </template>
+            <v-chart
+              v-if="trendTotal > 0"
+              class="dashboard-view__chart"
+              :option="trendLineOption"
+              autoresize
+            />
+            <el-empty v-else :description="t('common.empty.noAlertsRecorded')" />
+          </el-card>
+        </el-col>
+      </el-row>
 
       <!-- Recent Alerts Table -->
       <el-card shadow="never" class="dashboard-view__section">
@@ -136,9 +143,22 @@ import {
   Tickets,
 } from '@element-plus/icons-vue';
 
-import { getDashboardStats, listAlerts } from '@/api/resources';
-import type { Alert, AlertSeverity, AlertStatus, DashboardStats } from '@/api/types';
+import { use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { PieChart, LineChart } from 'echarts/charts';
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+} from 'echarts/components';
+import VChart from 'vue-echarts';
+
+import { getAlertTrend, getDashboardStats, listAlerts } from '@/api/resources';
+import type { Alert, AlertSeverity, AlertStatus, AlertTrendPoint, DashboardStats } from '@/api/types';
 import { RECENT_ALERTS_COUNT } from '@/utils/constants';
+
+use([CanvasRenderer, PieChart, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent]);
 
 const { t } = useI18n();
 
@@ -160,25 +180,90 @@ const FALLBACK_STATS: DashboardStats = {
   work_orders_closed: 0,
 };
 
+const SEVERITY_COLORS: Record<string, string> = {
+  low: '#67c23a',
+  medium: '#e6a23c',
+  high: '#f56c6c',
+  critical: '#c45656',
+};
+
 const loading = ref(true);
 const stats = ref<DashboardStats>({ ...FALLBACK_STATS });
 const recentAlerts = ref<Alert[]>([]);
-
-const severityEntries = computed(() => {
-  const bySev = stats.value.alerts_by_severity;
-  const keys = Object.keys(bySev).length > 0 ? Object.keys(bySev) : ['low', 'medium', 'high', 'critical'];
-  const maxCount = Math.max(1, ...Object.values(bySev));
-  return keys.map((key) => ({
-    key,
-    label: t('common.enum.alertSeverity.' + key),
-    count: bySev[key] ?? 0,
-    percent: ((bySev[key] ?? 0) / maxCount) * 100,
-  }));
-});
+const trendData = ref<AlertTrendPoint[]>([]);
 
 const severityTotal = computed(() =>
   Object.values(stats.value.alerts_by_severity).reduce((sum, n) => sum + n, 0),
 );
+
+const trendTotal = computed(() =>
+  trendData.value.reduce((sum, p) => sum + p.count, 0),
+);
+
+// --- ECharts options ---
+
+const severityPieOption = computed(() => {
+  const bySev = stats.value.alerts_by_severity;
+  const keys = Object.keys(bySev).length > 0 ? Object.keys(bySev) : ['low', 'medium', 'high', 'critical'];
+  const data = keys
+    .filter((k) => (bySev[k] ?? 0) > 0)
+    .map((k) => ({
+      name: t('common.enum.alertSeverity.' + k),
+      value: bySev[k] ?? 0,
+      itemStyle: { color: SEVERITY_COLORS[k] ?? '#909399' },
+    }));
+
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 4, icon: 'circle' },
+    series: [
+      {
+        type: 'pie',
+        radius: ['38%', '65%'],
+        center: ['50%', '42%'],
+        avoidLabelOverlap: true,
+        label: { show: true, formatter: '{b}\n{c}', fontSize: 12 },
+        emphasis: { label: { show: true, fontWeight: 'bold' } },
+        data,
+      },
+    ],
+  };
+});
+
+const trendLineOption = computed(() => {
+  const trendMap = new Map(trendData.value.map((p) => [p.date, p.count]));
+  const today = new Date();
+  const dates: string[] = [];
+  const counts: number[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    const dateStr = d.toISOString().split('T')[0]!;
+    dates.push(dateStr.slice(5)); // MM-DD
+    counts.push(trendMap.get(dateStr) ?? 0);
+  }
+
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: '3%', right: '4%', bottom: '8%', top: '6%', containLabel: true },
+    xAxis: { type: 'category', data: dates, boundaryGap: false },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      {
+        type: 'line',
+        data: counts,
+        smooth: true,
+        areaStyle: { opacity: 0.12 },
+        lineStyle: { width: 2, color: '#409eff' },
+        itemStyle: { color: '#409eff' },
+        symbolSize: 6,
+      },
+    ],
+  };
+});
+
+// --- Utilities ---
 
 function severityTagType(severity: AlertSeverity): '' | 'success' | 'warning' | 'danger' | 'info' {
   const map: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -208,12 +293,14 @@ function formatDateTime(iso: string): string {
 
 onMounted(async () => {
   try {
-    const [statsData, alertsData] = await Promise.all([
+    const [statsData, alertsData, trend] = await Promise.all([
       getDashboardStats(),
       listAlerts({ limit: RECENT_ALERTS_COUNT }),
+      getAlertTrend(7),
     ]);
     stats.value = statsData;
     recentAlerts.value = alertsData;
+    trendData.value = trend;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : t('dashboard.loadFailed');
     ElMessage.error(message);
@@ -271,76 +358,16 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+.dashboard-view__chart-card {
+  height: 100%;
+}
+
+.dashboard-view__chart {
+  width: 100%;
+  height: 300px;
+}
+
 .dashboard-view__section {
   margin-bottom: 20px;
-}
-
-/* Severity Chart (Pure CSS) */
-.severity-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.severity-chart__row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.severity-chart__label {
-  width: 64px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--el-text-color-regular);
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.severity-chart__bar-wrapper {
-  flex: 1;
-  height: 22px;
-  background-color: var(--el-fill-color-lighter);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.severity-chart__bar {
-  height: 100%;
-  border-radius: 4px;
-  min-width: 0;
-  transition: width 0.4s ease;
-}
-
-.severity-chart__bar--low {
-  background-color: #67c23a;
-}
-
-.severity-chart__bar--medium {
-  background-color: #e6a23c;
-}
-
-.severity-chart__bar--high {
-  background-color: #f56c6c;
-}
-
-.severity-chart__bar--critical {
-  background-color: #c45656;
-}
-
-.severity-chart__count {
-  width: 36px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.severity-chart__empty {
-  text-align: center;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  margin: 8px 0 0;
 }
 </style>

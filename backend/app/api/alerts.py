@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import csv
 import io
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, Query
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -60,6 +61,14 @@ def export_alerts(
 @router.get("/{alert_id}", response_model=AlertResponse)
 def get_alert(alert_id: int, db: Session = Depends(get_db)) -> Alert:
     return get_or_404(db, Alert, alert_id)
+
+
+@router.get("/{alert_id}/evidence")
+def get_alert_evidence(alert_id: int, db: Session = Depends(get_db)) -> FileResponse:
+    alert = get_or_404(db, Alert, alert_id)
+    if not alert.evidence_image_path or not Path(alert.evidence_image_path).exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evidence image not found")
+    return FileResponse(alert.evidence_image_path)
 
 
 @router.put("/{alert_id}", response_model=AlertResponse, dependencies=[Depends(require_role(UserRole.admin))])
