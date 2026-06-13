@@ -11,36 +11,39 @@
 MallSenseAI/
 ├── backend/              # FastAPI backend (Python 3.10)
 │   ├── app/
-│   │   ├── main.py       # FastAPI app, 11 routers, CORS, exception handlers
+│   │   ├── main.py       # FastAPI app, 13 routers, CORS, exception handlers, lifespan
 │   │   ├── core/         # Settings (pydantic-settings, .env)
 │   │   ├── models/       # 10 ORM models (SQLAlchemy 2 + pgvector)
-│   │   ├── api/          # 11 API routers (cameras, scenes, ROIs, rules, alerts, work-orders, users, auth, dashboard, alert-workflow)
+│   │   ├── api/          # 12 API routers (cameras, scenes, ROIs, rules, alerts, work-orders, users, auth, dashboard, alert-workflow, detection-events, health)
 │   │   ├── auth/         # JWT HS256 + bcrypt auth
 │   │   ├── camera/       # DahuaCameraAdapter (httpx digest auth), CaptureService (TTL cache), HealthCheckService
 │   │   ├── db/           # SQLAlchemy sessions, Alembic migrations, legacy migration scripts
-│   │   ├── alerts/       # AlertService (lifecycle), WorkOrderStateMachine, AlertEventBus (pub/sub), CriticalAlertHandler
+│   │   ├── alerts/       # AlertService (lifecycle), WorkOrderStateMachine, AlertEventBus (pub/sub), CriticalAlertHandler, AlertWebSocketManager
 │   │   ├── notifications/# NotificationService (retry + backoff), WeComNotifier, TwilioSMSNotifier
 │   │   ├── detectors/    # BaseDetector ABC, DebrisDetector (YOLO), FireSmokeDetector, DetectorRegistry
 │   │   ├── roi/          # ROIEngine (point-in-polygon, IoU, area), validation, legacy importer
 │   │   ├── rules/        # ObstructionRuleEngine (duration/area/forbidden-zone), CooldownTracker
 │   │   └── schemas/      # Pydantic request/response schemas for all entities
-│   ├── tests/            # 131 tests (API: 17, ROI engine: 46, Rule engine: 68)
+│   ├── tests/            # 244 tests (API: 23, ROI engine: 46, Rule engine: 68, Pipeline: 9+14, Workers: 84)
 │   └── pyproject.toml    # Backend dependencies
 ├── frontend/             # Vue 3 + TypeScript + Element Plus SPA
 │   ├── src/
-│   │   ├── views/        # 10 views (Login, Dashboard, CameraList/Detail, SceneList/Detail, AlertList, WorkOrderList, UserList, RuleConfig)
-│   │   ├── components/   # RoiCanvas.vue (polygon drawing)
-│   │   ├── layouts/      # MainLayout.vue (sidebar + header)
+│   │   ├── views/        # 11 views (Login, Dashboard, CameraList/Detail, SceneList/Detail, AlertList, WorkOrderList, UserList, RuleConfig, DetectionEventList)
+│   │   ├── components/   # RoiCanvas.vue (polygon drawing), AlertDetailDrawer (alert evidence + metadata + work orders)
+│   │   ├── composables/  # useAlertEvents (WebSocket real-time alert push)
+│   │   ├── layouts/      # MainLayout.vue (sidebar + header + notification bell)
 │   │   ├── api/          # Axios client, typed resources, TypeScript interfaces
 │   │   ├── auth/         # Pinia auth store, JWT parsing, localStorage session
-│   │   ├── utils/        # Shared constants, tag type mappings
-│   │   └── router/       # 10 routes with auth/admin guards
+│   │   ├── utils/        # Shared constants, tag type mappings (centralized)
+│   │   └── router/       # 11 routes with auth/admin guards
 │   └── e2e/              # 10 Playwright e2e tests (route mocking, no backend needed)
 ├── workers/              # Asyncio inspection worker system
 │   ├── scheduler.py      # InspectionScheduler — periodic capture with failure backoff
 │   ├── executor.py       # InspectionExecutor + BatchExecutor — concurrent camera capture
 │   ├── metrics.py        # WorkerMetricsCollector — aggregate + per-camera metrics
 │   ├── models.py         # InspectionResult, WorkerMetrics, WorkerStatus, ScheduledCamera
+│   ├── context.py        # CameraDetectionContext, CameraContextCache (TTL), load_camera_context
+│   ├── pipeline.py       # DetectionPipeline: capture→detect→persist→rule→alert orchestration
 │   └── run.py            # Entry point: `python -m workers.run`
 ├── shared/               # Cross-cutting Python modules (imported by backend + workers)
 │   ├── coordinate_standard.py  # Point types, pixel↔normalized coordinate conversion
@@ -52,7 +55,7 @@ MallSenseAI/
 ├── openspec/             # 7 archived changes + main specs
 ├── data/assets/cameras/  # New platform asset storage
 ├── alarm_images/         # Legacy camera data (shared during migration)
-├── .github/workflows/    # CI: backend pytest + frontend vue-tsc + vite build
+├── .github/workflows/    # CI: backend pytest + frontend vue-tsc + vite build + playwright e2e
 ├── docker-compose.dev.yml # Dev infrastructure — PostgreSQL 16 + pgvector only
 └── [legacy .py files]    # main.py, web_server.py, camera_manager.py, alarm_system.py, etc.
 ```
@@ -65,7 +68,7 @@ MallSenseAI/
 | `python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 5380` | FastAPI backend (dev) |
 | `cd frontend && npm run dev` | Vue 3 dev server on port 5373, proxies `/api` → `:5380` |
 | `cd frontend && npm run build` | Production build (vue-tsc + vite) |
-| `python3 -m pytest backend/tests/ -v` | Run 131 backend tests |
+| `python3 -m pytest backend/tests/ -v` | Run 244 backend tests |
 | `cd frontend && npx playwright test` | Run 10 e2e tests (Chromium, route mocking) |
 | `python3 -m workers.run` | Start inspection scheduler (asyncio worker) |
 | `python3 -m backend.app.db.run_migration --dry-run` | Legacy migration dry-run |
@@ -79,7 +82,7 @@ MallSenseAI/
 | `python camera_manager.py` | Tkinter GUI for camera management |
 
 ### CI (GitHub Actions)
-- On push/PR to `main`: backend pytest (Python 3.10) + frontend vue-tsc + vite build (Node 22)
+- On push/PR to `main`: backend pytest (Python 3.10) + frontend vue-tsc + vite build (Node 22) + Playwright e2e (Chromium)
 
 ## Dev environment
 - **Ports**: backend 5380, frontend 5373 (no conflict with mysqlbot 8000/5173, mi 5280/5273)
@@ -107,11 +110,11 @@ MallSenseAI/
 - **Coordinates**: All ROI coordinates in normalized [0.0, 1.0] space. Conversion helpers in `shared/coordinate_standard.py`.
 - **Camera credentials**: `Camera.password_hash` stores **plaintext** (needed for HTTP/RTSP auth to cameras), not bcrypt. `User.password_hash` is properly bcrypt-hashed.
 - **Detection pipeline**: `workers/scheduler.py` → `executor.py` (capture) → detectors (YOLO debris/fire-smoke) → `rules/engine.py` (obstruction evaluation) → `alerts/service.py` (lifecycle) → `notifications/service.py` (dispatch)
-- **Alert lifecycle**: `new` → `confirmed` → `resolved` (or `false_positive`). Work orders auto-created on confirm.
+- **Alert lifecycle**: `pending` → `confirmed` → `resolved` (or `false_positive`). Work orders auto-created on confirm.
 - **Auth**: JWT HS256 via python-jose. Token payload has `sub` (user ID) + `exp` only; frontend resolves full user profile via `GET /api/users/{id}`.
 - **Inspection worker**: Asyncio-based periodic scheduler with per-camera intervals, exponential failure backoff (30s→60s→120s→300s), bounded concurrency (default 10), and graceful SIGINT/SIGTERM shutdown.
 
-## API surface (11 routers, ~50 endpoints)
+## API surface (13 routers, ~55 endpoints)
 | Router | Prefix | Key Endpoints |
 |--------|--------|---------------|
 | auth | /api | POST /auth/login |
@@ -121,10 +124,12 @@ MallSenseAI/
 | rules | /api | CRUD, filterable by camera_id |
 | alerts | /api | GET list, GET/PUT by id |
 | alert_workflow | /api | POST /alerts/{id}/confirm, /false-positive, /resolve; POST /work-orders/{id}/assign, /transition |
-| work_orders | /api | CRUD + PATCH status |
+| work_orders | /api | CRUD + PATCH status, filterable by alert_id |
 | users | /api | CRUD (admin bcrypt-hashed passwords) |
 | dashboard | /api | GET /dashboard/stats (aggregate counts) |
+| detection_events | /api | GET list (filterable by camera_id/roi_id/detected_at range), GET by id |
 | health | /api | GET /health (liveness) |
+| ws | /api | WebSocket /ws/alerts (JWT auth, real-time alert push) |
 
 ## Frontend auth flow
 1. `POST /api/auth/login` → `{access_token, token_type}`
@@ -134,20 +139,21 @@ MallSenseAI/
 5. Auth guard: unauthenticated → `/login`; non-admin → `/users` redirects to `/`
 
 ## Test coverage
-- **Backend**: 131 tests — API (17, FastAPI TestClient + file-based SQLite), ROI engine (46, pure unit), Rule engine (68, pure unit)
+- **Backend**: 244 tests — API (23, FastAPI TestClient + file-based SQLite), ROI engine (46, pure unit), Rule engine (68, pure unit), Pipeline + DetectionEvent (23, mock-based), Workers (84: models 17, metrics 18, executor 10, scheduler 39)
 - **Frontend e2e**: 10 Playwright tests using `page.route()` mocking (no real backend)
-- **CI**: GitHub Actions runs both on every push/PR
+- **CI**: GitHub Actions runs all three on every push/PR
 
 ## Known issues and gotchas
 - LSP shows "could not be resolved" on all `backend.app.*` imports — workspace config issue, not real errors
 - Root `requirements.txt` is for legacy system only; new platform uses `backend/pyproject.toml`
-- `notifications/router.py` is implemented but NOT wired in `main.py` — needs a startup event
-- `workers/` is implemented but NOT integrated with detection pipeline yet (capture only, no detector→rule→alert wiring)
+- CI backend job uses `pip install -r requirements.txt` (legacy deps) instead of `pip install -e backend/` — needs fixing
 - `legacy/` directory contains only `README.md`; `scripts/isolate_legacy.sh` has not been run
 - Duplicate location: "4层西山4014铺旁通道" for IPs 10.25.4.125 and 10.25.4.128 (2 known conflicts in legacy data)
 - 17 of 20 legacy `safe_zones.json` are degenerate (all zeros); only 3 real ROIs were migrated
 - V2RAY proxy in tmux blocks uvicorn — must `unset http_proxy https_proxy` before starting dev server
-- `camera_manager.py` still resizes to `1600x1200` while new platform uses normalized coords
+- Detection pipeline v1 uses in-memory event_bus per process — no cross-process messaging (same-process only)
+- YOLO model files (.pt) excluded from Docker image — detectors gracefully degrade if weights missing
+- Backend tests use SQLite; production uses PostgreSQL+pgvector — no integration test for pgvector features
 
 ## Dependency notes
 - Backend: FastAPI, SQLAlchemy 2, Alembic, psycopg2-binary, pgvector, python-jose, passlib, httpx, shapely, ultralytics (YOLO)
@@ -266,9 +272,9 @@ pgvector/pgvector:pg16 ─── postgres:5432 (内部网络)
 |-----|---------|---------|
 | backend | `pytest backend/tests/` | 每次 push/PR 到 main |
 | frontend | `vue-tsc --noEmit` + `vite build` | 每次 push/PR 到 main |
+| e2e | `playwright test` (10 tests, Chromium) | 每次 push/PR 到 main |
 
 ### 当前测试覆盖盲区（已知）
 
-- Workers（scheduler、executor、metrics）零测试 — 下个 change 应补齐
 - 后端测试用 SQLite，生产用 PostgreSQL+pgvector — 无集成测试
-- Playwright e2e 测试未加入 CI — 仅本地运行
+- 前端 AlertDetailDrawer 和 DetectionEventListView 无 e2e 覆盖
