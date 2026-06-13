@@ -73,15 +73,18 @@ export async function mockLogin(
   const token = createFakeJwt({ sub: String(user.id) });
 
   await page.addInitScript(
-    ({ authToken, authUser, tokenStorageKey, userStorageKey }) => {
+    ({ authToken, authUser, tokenStorageKey, userStorageKey, localeKey, localeVal }) => {
       window.localStorage.setItem(tokenStorageKey, authToken);
       window.localStorage.setItem(userStorageKey, JSON.stringify(authUser));
+      window.localStorage.setItem(localeKey, localeVal);
     },
     {
       authToken: token,
       authUser: { id: user.id, username: user.username, display_name: user.display_name, role: user.role },
       tokenStorageKey: 'mallsenseai.auth.token',
       userStorageKey: 'mallsenseai.auth.user',
+      localeKey: 'mallsenseai.locale',
+      localeVal: 'en',
     },
   );
 

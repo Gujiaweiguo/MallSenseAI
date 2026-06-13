@@ -69,15 +69,15 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
 
   await page.goto('/alerts');
   await expect(page.locator('.el-table')).toContainText('obstruction_duration');
-  await expect(page.locator('.el-table')).toContainText('critical');
-  await expect(page.locator('.el-table')).toContainText('pending');
+  await expect(page.locator('.el-table')).toContainText('Critical');
+  await expect(page.locator('.el-table')).toContainText('Pending');
   await expect(page.locator('.el-table')).toContainText('fire_smoke');
-  await expect(page.locator('.el-table')).toContainText('resolved');
+  await expect(page.locator('.el-table')).toContainText('Resolved');
   await expect(page.locator('.el-table')).toContainText('Cam 1');
   await expect(page.locator('.el-table')).toContainText('Cam 2');
 
   await page.getByRole('button', { name: 'Confirm' }).click();
-  await expect(page.locator('.el-table')).toContainText('confirmed');
+  await expect(page.locator('.el-table')).toContainText('Confirmed');
 
   await page.locator('.filter-bar .el-select').first().click();
   await page.locator('.el-select-dropdown:visible').getByText('Critical', { exact: true }).click();
@@ -151,7 +151,7 @@ test('batch confirm confirms multiple selected alerts', async ({ page }) => {
   });
 
   await page.goto('/alerts');
-  await expect(page.locator('.el-table')).toContainText('pending');
+  await expect(page.locator('.el-table')).toContainText('Pending');
 
   const rowCheckboxes = page.locator('.el-table__body-wrapper .el-checkbox');
   await rowCheckboxes.nth(0).click();
@@ -163,7 +163,7 @@ test('batch confirm confirms multiple selected alerts', async ({ page }) => {
   await page.getByRole('button', { name: 'Batch Confirm' }).click();
   await page.locator('.el-message-box').getByRole('button', { name: 'Confirm' }).click();
 
-  await expect(page.locator('.el-table')).toContainText('confirmed');
+  await expect(page.locator('.el-table')).toContainText('Confirmed');
   await expect(page.locator('.batch-bar')).not.toBeVisible();
 });
 
@@ -207,7 +207,7 @@ test('batch bar clear button deselects all rows', async ({ page }) => {
   });
 
   await page.goto('/alerts');
-  await expect(page.locator('.el-table')).toContainText('pending');
+  await expect(page.locator('.el-table')).toContainText('Pending');
 
   await page.locator('.el-table__body-wrapper .el-checkbox').nth(0).click();
   await expect(page.locator('.batch-bar')).toBeVisible();

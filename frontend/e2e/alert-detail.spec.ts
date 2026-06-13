@@ -63,8 +63,8 @@ test('clicking alert row opens detail drawer with alert info', async ({ page }) 
   await expect(drawer).toContainText('Alert #10');
 
   // Should show severity and status
-  await expect(drawer).toContainText('high');
-  await expect(drawer).toContainText('pending');
+  await expect(drawer).toContainText('High');
+  await expect(drawer).toContainText('Pending');
 
   // Should show camera name (resolved from API)
   await expect(drawer).toContainText('Hallway Cam');
@@ -94,7 +94,7 @@ test('drawer shows related work orders for alert', async ({ page }) => {
   // Should show related work orders section
   await expect(drawer).toContainText('Related Work Orders');
   await expect(drawer).toContainText('Investigate immediately');
-  await expect(drawer).toContainText('open');
+  await expect(drawer).toContainText('Open');
 });
 
 test('drawer closes when clicking close button', async ({ page }) => {

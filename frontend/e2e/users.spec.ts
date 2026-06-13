@@ -81,7 +81,7 @@ test('admin user management create, edit, and delete works', async ({ page }) =>
   });
 
   await page.goto('/users');
-  await expect(page.locator('.el-table')).toContainText('admin');
+  await expect(page.locator('.el-table')).toContainText('Admin');
   await expect(page.locator('.el-table')).toContainText('viewer1');
 
   await page.getByRole('button', { name: 'Add User' }).click();

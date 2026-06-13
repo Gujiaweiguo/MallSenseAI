@@ -65,10 +65,10 @@ test('work-order list and status transitions work', async ({ page }) => {
 
   await page.goto('/work-orders');
   await expect(page.locator('.el-table')).toContainText('Needs inspection');
-  await expect(page.locator('.el-table')).toContainText('open');
+  await expect(page.locator('.el-table')).toContainText('Open');
   await expect(page.locator('.el-table')).toContainText('Completed');
-  await expect(page.locator('.el-table')).toContainText('closed');
+  await expect(page.locator('.el-table')).toContainText('Closed');
 
   await page.getByRole('button', { name: 'Start' }).click();
-  await expect(page.locator('.el-table')).toContainText('in_progress');
+  await expect(page.locator('.el-table')).toContainText('In Progress');
 });

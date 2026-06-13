@@ -44,8 +44,8 @@ test('detection events list loads and displays events', async ({ page }) => {
   await expect(page.locator('.el-table')).toContainText('92.0%');
   await expect(page.locator('.el-table')).toContainText('78.0%');
   await expect(page.locator('.el-table')).toContainText('N/A');
-  await expect(page.locator('.el-table')).toContainText('yolo');
-  await expect(page.locator('.el-table')).toContainText('image_compare');
+  await expect(page.locator('.el-table')).toContainText('YOLO');
+  await expect(page.locator('.el-table')).toContainText('Image Compare');
 });
 
 test('clicking event row opens metadata dialog', async ({ page }) => {
@@ -71,16 +71,16 @@ test('detector type filter works', async ({ page }) => {
   await page.goto('/detection-events');
 
   // All events visible
-  await expect(page.locator('.el-table')).toContainText('yolo');
-  await expect(page.locator('.el-table')).toContainText('image_compare');
+  await expect(page.locator('.el-table')).toContainText('YOLO');
+  await expect(page.locator('.el-table')).toContainText('Image Compare');
 
   // Filter by YOLO
   await page.locator('.filter-bar .el-select').click();
   await page.locator('.el-select-dropdown:visible').getByText('YOLO', { exact: true }).click();
 
   // Only yolo events should be visible
-  await expect(page.locator('.el-table')).toContainText('yolo');
-  await expect(page.locator('.el-table')).not.toContainText('image_compare');
+  await expect(page.locator('.el-table')).toContainText('YOLO');
+  await expect(page.locator('.el-table')).not.toContainText('Image Compare');
 });
 
 test('camera ID filter works', async ({ page }) => {

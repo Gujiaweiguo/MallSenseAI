@@ -66,8 +66,8 @@ test('notification config page loads and displays groups', async ({ page }) => {
 
   await expect(page.locator('.el-table')).toContainText('Ops Team');
   await expect(page.locator('.el-table')).toContainText('Management');
-  await expect(page.locator('.el-table')).toContainText('high');
-  await expect(page.locator('.el-table')).toContainText('critical');
+  await expect(page.locator('.el-table')).toContainText('High');
+  await expect(page.locator('.el-table')).toContainText('Critical');
 });
 
 test('create notification group flow works', async ({ page }) => {
@@ -111,7 +111,7 @@ test('create notification group flow works', async ({ page }) => {
   await page.getByRole('button', { name: 'Create', exact: true }).click();
 
   await expect(page.locator('.el-table')).toContainText('Security Team');
-  await expect(page.locator('.el-table')).toContainText('high');
+  await expect(page.locator('.el-table')).toContainText('High');
 });
 
 test('selecting a group shows its channels', async ({ page }) => {
@@ -158,8 +158,8 @@ test('selecting a group shows its channels', async ({ page }) => {
   await page.locator('.el-table__row').first().click();
 
   // Channel card should be visible with channel info
-  await expect(page.locator('.notif-config__channel-list')).toContainText('wecom');
-  await expect(page.locator('.notif-config__channel-list')).toContainText('sms');
+  await expect(page.locator('.notif-config__channel-list')).toContainText('WeCom');
+  await expect(page.locator('.notif-config__channel-list')).toContainText('SMS');
   await expect(page.locator('.notif-config__channel-list')).toContainText('Enabled');
   await expect(page.locator('.notif-config__channel-list')).toContainText('Disabled');
 });
@@ -203,7 +203,7 @@ test('deleting a group removes it from the table', async ({ page }) => {
 
   // Click delete and confirm
   await page.locator('.el-table__row').first().getByRole('button', { name: 'Delete' }).click();
-  await page.locator('.el-message-box').getByRole('button', { name: 'OK' }).click();
+  await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click();
 
   // Group should be gone
   await expect(page.locator('.el-table')).not.toContainText('Ops Team');
@@ -273,7 +273,7 @@ test('editing a channel updates its config', async ({ page }) => {
   await expect(webhookInput).toHaveValue('https://old-webhook.example.com');
 
   await webhookInput.fill('https://new-webhook.example.com');
-  await page.getByRole('button', { name: 'Update' }).click();
+  await page.locator('.notif-config__channel-form').getByRole('button', { name: 'Save' }).click();
 
   await expect.poll(() => updatedConfig).toEqual({
     config: { webhook_url: 'https://new-webhook.example.com' },

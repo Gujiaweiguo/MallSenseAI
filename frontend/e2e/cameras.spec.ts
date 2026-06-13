@@ -91,10 +91,10 @@ test('camera list, detail, create, and delete flows work', async ({ page }) => {
 
   await expect(page.locator('.el-table')).toContainText('Entrance Cam');
   await expect(page.locator('.el-table')).toContainText('192.168.1.10');
-  await expect(page.locator('.el-table')).toContainText('active');
+    await expect(page.locator('.el-table')).toContainText('Active');
   await expect(page.locator('.el-table')).toContainText('Corridor Cam');
   await expect(page.locator('.el-table')).toContainText('192.168.1.11');
-  await expect(page.locator('.el-table')).toContainText('inactive');
+    await expect(page.locator('.el-table')).toContainText('Inactive');
 
   await page.getByRole('link', { name: 'Entrance Cam' }).click();
   await expect(page).toHaveURL('/cameras/1');
