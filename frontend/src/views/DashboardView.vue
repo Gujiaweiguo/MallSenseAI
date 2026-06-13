@@ -2,7 +2,7 @@
   <section class="dashboard-view">
     <div v-if="loading" class="dashboard-view__loading">
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
-      <span>Loading dashboard&hellip;</span>
+      <span>{{ t('dashboard.loading') }}</span>
     </div>
 
     <template v-else>
@@ -12,13 +12,13 @@
           <el-card shadow="never" class="stat-card">
             <div class="stat-card__header">
               <el-icon :size="28" color="#409eff"><VideoCamera /></el-icon>
-              <span class="stat-card__title">Cameras</span>
+              <span class="stat-card__title">{{ t('dashboard.cameras') }}</span>
             </div>
             <div class="stat-card__values">
-              <el-statistic title="Total" :value="stats.cameras_total" />
+              <el-statistic :title="t('dashboard.total')" :value="stats.cameras_total" />
               <div class="stat-card__breakdown">
-                <el-tag type="success" size="small">{{ stats.cameras_active }} active</el-tag>
-                <el-tag v-if="stats.cameras_error > 0" type="danger" size="small">{{ stats.cameras_error }} error</el-tag>
+                <el-tag type="success" size="small">{{ t('dashboard.nActive', { n: stats.cameras_active }) }}</el-tag>
+                <el-tag v-if="stats.cameras_error > 0" type="danger" size="small">{{ t('dashboard.nError', { n: stats.cameras_error }) }}</el-tag>
               </div>
             </div>
           </el-card>
@@ -28,10 +28,10 @@
           <el-card shadow="never" class="stat-card">
             <div class="stat-card__header">
               <el-icon :size="28" color="#67c23a"><PictureFilled /></el-icon>
-              <span class="stat-card__title">Scenes</span>
+              <span class="stat-card__title">{{ t('dashboard.scenes') }}</span>
             </div>
             <div class="stat-card__values">
-              <el-statistic title="Total" :value="stats.scenes_total" />
+              <el-statistic :title="t('dashboard.total')" :value="stats.scenes_total" />
             </div>
           </el-card>
         </el-col>
@@ -40,13 +40,13 @@
           <el-card shadow="never" class="stat-card">
             <div class="stat-card__header">
               <el-icon :size="28" color="#e6a23c"><Bell /></el-icon>
-              <span class="stat-card__title">Alerts</span>
+              <span class="stat-card__title">{{ t('dashboard.alerts') }}</span>
             </div>
             <div class="stat-card__values">
-              <el-statistic title="Total" :value="stats.alerts_total" />
+              <el-statistic :title="t('dashboard.total')" :value="stats.alerts_total" />
               <div class="stat-card__breakdown">
-                <el-tag type="warning" size="small">{{ stats.alerts_pending }} pending</el-tag>
-                <el-tag type="success" size="small">{{ stats.alerts_resolved }} resolved</el-tag>
+                <el-tag type="warning" size="small">{{ t('dashboard.nPending', { n: stats.alerts_pending }) }}</el-tag>
+                <el-tag type="success" size="small">{{ t('dashboard.nResolved', { n: stats.alerts_resolved }) }}</el-tag>
               </div>
             </div>
           </el-card>
@@ -56,13 +56,13 @@
           <el-card shadow="never" class="stat-card">
             <div class="stat-card__header">
               <el-icon :size="28" color="#909399"><Tickets /></el-icon>
-              <span class="stat-card__title">Work Orders</span>
+              <span class="stat-card__title">{{ t('dashboard.workOrders') }}</span>
             </div>
             <div class="stat-card__values">
-              <el-statistic title="Total" :value="stats.work_orders_total" />
+              <el-statistic :title="t('dashboard.total')" :value="stats.work_orders_total" />
               <div class="stat-card__breakdown">
-                <el-tag size="small">{{ stats.work_orders_open }} open</el-tag>
-                <el-tag type="primary" size="small">{{ stats.work_orders_in_progress }} in progress</el-tag>
+                <el-tag size="small">{{ t('dashboard.nOpen', { n: stats.work_orders_open }) }}</el-tag>
+                <el-tag type="primary" size="small">{{ t('dashboard.nInProgress', { n: stats.work_orders_in_progress }) }}</el-tag>
               </div>
             </div>
           </el-card>
@@ -72,7 +72,7 @@
       <!-- Alert Severity Breakdown -->
       <el-card shadow="never" class="dashboard-view__section">
         <template #header>
-          <span>Alert Severity Breakdown</span>
+          <span>{{ t('dashboard.severityBreakdown') }}</span>
         </template>
         <div class="severity-chart">
           <div
@@ -90,30 +90,30 @@
             </div>
             <span class="severity-chart__count">{{ sev.count }}</span>
           </div>
-          <p v-if="severityTotal === 0" class="severity-chart__empty">No alerts recorded yet.</p>
+          <p v-if="severityTotal === 0" class="severity-chart__empty">{{ t('common.empty.noAlertsRecorded') }}</p>
         </div>
       </el-card>
 
       <!-- Recent Alerts Table -->
       <el-card shadow="never" class="dashboard-view__section">
         <template #header>
-          <span>Recent Alerts</span>
+          <span>{{ t('dashboard.recentAlerts') }}</span>
         </template>
-        <el-table :data="recentAlerts" stripe style="width: 100%" empty-text="No alerts found.">
-          <el-table-column prop="alert_type" label="Type" min-width="120" />
-          <el-table-column prop="severity" label="Severity" min-width="100">
+        <el-table :data="recentAlerts" stripe style="width: 100%" :empty-text="t('common.empty.noAlerts')">
+          <el-table-column prop="alert_type" :label="t('common.table.type')" min-width="120" />
+          <el-table-column prop="severity" :label="t('common.table.severity')" min-width="100">
             <template #default="{ row }">
               <el-tag :type="severityTagType(row.severity)" size="small" effect="dark">
-                {{ row.severity }}
+                {{ t('common.enum.alertSeverity.' + row.severity) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="Status" min-width="120">
+          <el-table-column prop="status" :label="t('common.table.status')" min-width="120">
             <template #default="{ row }">
-              <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
+              <el-tag :type="statusTagType(row.status)" size="small">{{ t('common.enum.alertStatus.' + row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="detected_at" label="Detected At" min-width="180">
+          <el-table-column prop="detected_at" :label="t('common.table.detectedAt')" min-width="180">
             <template #default="{ row }">
               {{ formatDateTime(row.detected_at) }}
             </template>
@@ -127,6 +127,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
+import { useI18n } from 'vue-i18n';
 import {
   Loading,
   VideoCamera,
@@ -138,6 +139,8 @@ import {
 import { getDashboardStats, listAlerts } from '@/api/resources';
 import type { Alert, AlertSeverity, AlertStatus, DashboardStats } from '@/api/types';
 import { RECENT_ALERTS_COUNT } from '@/utils/constants';
+
+const { t } = useI18n();
 
 const FALLBACK_STATS: DashboardStats = {
   cameras_total: 0,
@@ -167,7 +170,7 @@ const severityEntries = computed(() => {
   const maxCount = Math.max(1, ...Object.values(bySev));
   return keys.map((key) => ({
     key,
-    label: key.charAt(0).toUpperCase() + key.slice(1),
+    label: t('common.enum.alertSeverity.' + key),
     count: bySev[key] ?? 0,
     percent: ((bySev[key] ?? 0) / maxCount) * 100,
   }));
@@ -212,7 +215,7 @@ onMounted(async () => {
     stats.value = statsData;
     recentAlerts.value = alertsData;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load dashboard data';
+    const message = err instanceof Error ? err.message : t('dashboard.loadFailed');
     ElMessage.error(message);
   } finally {
     loading.value = false;

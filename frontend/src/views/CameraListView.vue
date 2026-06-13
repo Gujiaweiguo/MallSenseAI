@@ -2,44 +2,44 @@
   <section class="page-card">
     <div class="page-header">
       <div>
-        <h2 class="page-title">Cameras</h2>
-        <p class="page-subtitle">Camera inventory loaded from GET /api/cameras.</p>
+        <h2 class="page-title">{{ t('camera.title') }}</h2>
+        <p class="page-subtitle">{{ t('camera.subtitle') }}</p>
       </div>
-      <el-button type="primary" @click="openCreateDialog">Add Camera</el-button>
+      <el-button type="primary" @click="openCreateDialog">{{ t('common.button.addCamera') }}</el-button>
     </div>
 
     <el-table v-loading="loading" :data="pagedCameras" row-key="id" stripe>
-      <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="name" label="Name" min-width="180">
+      <el-table-column prop="id" :label="t('common.table.id')" width="90" />
+      <el-table-column prop="name" :label="t('common.table.name')" min-width="180">
         <template #default="{ row }">
           <RouterLink :to="`/cameras/${row.id}`">{{ row.name }}</RouterLink>
         </template>
       </el-table-column>
-      <el-table-column prop="location" label="Location" min-width="180" />
-      <el-table-column prop="ip" label="IP" min-width="150" />
-      <el-table-column prop="status" label="Status" width="130">
+      <el-table-column prop="location" :label="t('common.table.location')" min-width="180" />
+      <el-table-column prop="ip" :label="t('common.table.ip')" min-width="150" />
+      <el-table-column prop="status" :label="t('common.table.status')" width="130">
         <template #default="{ row }">
-          <el-tag :type="statusType(row.status)">{{ row.status }}</el-tag>
+          <el-tag :type="statusType(row.status)">{{ t('common.enum.cameraStatus.' + row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Actions" width="180" fixed="right">
+      <el-table-column :label="t('common.table.actions')" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" @click="openEditDialog(row)">Edit</el-button>
+          <el-button size="small" @click="openEditDialog(row)">{{ t('common.button.edit') }}</el-button>
           <el-popconfirm
-            title="Delete this camera?"
-            confirm-button-text="Delete"
-            cancel-button-text="Cancel"
+            :title="t('camera.deleteConfirm')"
+            :confirm-button-text="t('common.button.delete')"
+            :cancel-button-text="t('common.button.cancel')"
             confirm-button-type="danger"
             @confirm="handleDelete(row.id)"
           >
             <template #reference>
-              <el-button size="small" type="danger" :loading="deleteLoading === row.id">Delete</el-button>
+              <el-button size="small" type="danger" :loading="deleteLoading === row.id">{{ t('common.button.delete') }}</el-button>
             </template>
           </el-popconfirm>
         </template>
       </el-table-column>
       <template #empty>
-        <span class="empty-note">No cameras found.</span>
+        <span class="empty-note">{{ t('common.empty.noCameras') }}</span>
       </template>
     </el-table>
 
@@ -56,41 +56,46 @@
     <!-- Create / Edit dialog -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEditing ? 'Edit Camera' : 'Add Camera'"
+      :title="isEditing ? t('camera.editCamera') : t('camera.addCamera')"
       width="520px"
       destroy-on-close
     >
       <el-form :model="form" label-width="100px" @submit.prevent="handleSubmit">
-        <el-form-item label="Name" required>
-          <el-input v-model="form.name" placeholder="Camera name" />
+        <el-form-item :label="t('camera.formName')" required>
+          <el-input v-model="form.name" :placeholder="t('camera.phName')" />
         </el-form-item>
-        <el-form-item label="Location" required>
-          <el-input v-model="form.location" placeholder="e.g. 1F East Corridor" />
+        <el-form-item :label="t('camera.formLocation')" required>
+          <el-input v-model="form.location" :placeholder="t('camera.phLocation')" />
         </el-form-item>
-        <el-form-item label="IP" required>
-          <el-input v-model="form.ip" placeholder="192.168.1.100" />
+        <el-form-item :label="t('camera.formIp')" required>
+          <el-input v-model="form.ip" :placeholder="t('camera.phIp')" />
         </el-form-item>
-        <el-form-item label="Port">
+        <el-form-item :label="t('camera.formPort')">
           <el-input-number v-model="form.port" :min="1" :max="65535" />
         </el-form-item>
-        <el-form-item label="Username" required>
-          <el-input v-model="form.username" placeholder="Camera HTTP auth username" />
+        <el-form-item :label="t('camera.formUsername')" required>
+          <el-input v-model="form.username" :placeholder="t('camera.phUsername')" />
         </el-form-item>
-        <el-form-item :label="isEditing ? 'Password' : 'Password'" :required="!isEditing">
-          <el-input v-model="form.password" type="password" show-password :placeholder="isEditing ? 'Leave blank to keep current' : 'Camera HTTP auth password'" />
+        <el-form-item :label="t('camera.formPassword')" :required="!isEditing">
+          <el-input
+            v-model="form.password"
+            type="password"
+            show-password
+            :placeholder="isEditing ? t('camera.phPasswordKeep') : t('camera.phPassword')"
+          />
         </el-form-item>
-        <el-form-item label="Status">
+        <el-form-item :label="t('camera.formStatus')">
           <el-select v-model="form.status">
-            <el-option label="Active" value="active" />
-            <el-option label="Inactive" value="inactive" />
-            <el-option label="Maintenance" value="maintenance" />
+            <el-option :label="t('common.enum.cameraStatus.active')" value="active" />
+            <el-option :label="t('common.enum.cameraStatus.inactive')" value="inactive" />
+            <el-option :label="t('common.enum.cameraStatus.maintenance')" value="maintenance" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">Cancel</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.button.cancel') }}</el-button>
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
-          {{ isEditing ? 'Save' : 'Create' }}
+          {{ isEditing ? t('common.button.save') : t('common.button.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -100,11 +105,14 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { createCamera, deleteCamera, listCameras, updateCamera } from '@/api/cameras';
 import type { Camera, CameraStatus, CameraUpdatePayload } from '@/api/types';
 import { cameraStatusTagType } from '@/utils/tagType';
 import { DEFAULT_CAMERA_PORT, DEFAULT_LIST_LIMIT } from '@/utils/constants';
+
+const { t } = useI18n();
 
 const cameras = ref<Camera[]>([]);
 const loading = ref(false);
@@ -168,7 +176,7 @@ function openEditDialog(camera: Camera): void {
 
 async function handleSubmit(): Promise<void> {
   if (!form.name || !form.location || !form.ip) {
-    ElMessage.error('Name, location, and IP are required.');
+    ElMessage.error(t('camera.toastRequired'));
     return;
   }
 
@@ -187,10 +195,10 @@ async function handleSubmit(): Promise<void> {
         payload.password = form.password;
       }
       await updateCamera(editingId.value, payload);
-      ElMessage.success('Camera updated.');
+      ElMessage.success(t('camera.toastUpdated'));
     } else {
       if (!form.username || !form.password) {
-        ElMessage.error('Username and password are required for new cameras.');
+        ElMessage.error(t('camera.toastCredsRequired'));
         return;
       }
       await createCamera({
@@ -202,12 +210,12 @@ async function handleSubmit(): Promise<void> {
         password: form.password,
         status: form.status,
       });
-      ElMessage.success('Camera created.');
+      ElMessage.success(t('camera.toastCreated'));
     }
     dialogVisible.value = false;
     await loadCameras();
   } catch {
-    ElMessage.error(isEditing.value ? 'Failed to update camera.' : 'Failed to create camera.');
+    ElMessage.error(isEditing.value ? t('camera.toastUpdateFailed') : t('camera.toastCreateFailed'));
   } finally {
     submitLoading.value = false;
   }
@@ -217,10 +225,10 @@ async function handleDelete(id: number): Promise<void> {
   deleteLoading.value = id;
   try {
     await deleteCamera(id);
-    ElMessage.success('Camera deleted.');
+    ElMessage.success(t('camera.toastDeleted'));
     await loadCameras();
   } catch {
-    ElMessage.error('Failed to delete camera.');
+    ElMessage.error(t('camera.toastDeleteFailed'));
   } finally {
     deleteLoading.value = null;
   }
@@ -231,7 +239,7 @@ async function loadCameras(): Promise<void> {
   try {
     cameras.value = await listCameras({ limit: DEFAULT_LIST_LIMIT });
   } catch {
-    ElMessage.error('Failed to load cameras.');
+    ElMessage.error(t('camera.toastLoadFailed'));
   } finally {
     loading.value = false;
   }

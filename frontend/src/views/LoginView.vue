@@ -2,31 +2,31 @@
   <main class="login-view">
     <section class="login-view__panel">
       <div class="login-view__intro">
-        <p class="login-view__eyebrow">MallSenseAI Console</p>
-        <h1>Sign in to manage cameras, alerts, and work orders.</h1>
-        <p>Use your platform account to access the web management console.</p>
+        <p class="login-view__eyebrow">{{ t('auth.consoleTitle') }}</p>
+        <h1>{{ t('auth.intro') }}</h1>
+        <p>{{ t('auth.hint') }}</p>
       </div>
 
       <el-card class="login-view__card" shadow="never">
         <template #header>
-          <div class="login-view__card-header">Login</div>
+          <div class="login-view__card-header">{{ t('auth.login') }}</div>
         </template>
 
         <el-form :model="form" label-position="top" @submit.prevent="handleSubmit">
-          <el-form-item label="Username" required>
-            <el-input v-model="form.username" autocomplete="username" placeholder="Username" />
+          <el-form-item :label="t('auth.username')" required>
+            <el-input v-model="form.username" autocomplete="username" :placeholder="t('auth.usernamePlaceholder')" />
           </el-form-item>
-          <el-form-item label="Password" required>
+          <el-form-item :label="t('auth.password')" required>
             <el-input
               v-model="form.password"
               autocomplete="current-password"
-              placeholder="Password"
+              :placeholder="t('auth.passwordPlaceholder')"
               show-password
               type="password"
             />
           </el-form-item>
           <el-button class="login-view__submit" type="primary" native-type="submit" :loading="loading">
-            Sign in
+            {{ t('common.button.signIn') }}
           </el-button>
         </el-form>
       </el-card>
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { computed, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/auth/store';
@@ -44,6 +45,7 @@ import { useAuthStore } from '@/auth/store';
 const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const form = reactive({
   username: '',
@@ -55,17 +57,17 @@ const redirectPath = computed(() => (typeof route.query.redirect === 'string' ? 
 
 async function handleSubmit(): Promise<void> {
   if (form.username.trim().length === 0 || form.password.length === 0) {
-    ElMessage.warning('Username and password are required.');
+    ElMessage.warning(t('auth.required'));
     return;
   }
 
   loading.value = true;
   try {
     await auth.login({ username: form.username.trim(), password: form.password });
-    ElMessage.success('Login successful.');
+    ElMessage.success(t('auth.success'));
     await router.replace(redirectPath.value);
   } catch {
-    ElMessage.error('Login failed. Check your credentials and try again.');
+    ElMessage.error(t('auth.failed'));
   } finally {
     loading.value = false;
   }
