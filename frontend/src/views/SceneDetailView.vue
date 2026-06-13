@@ -2,26 +2,26 @@
   <section class="page-card scene-detail">
     <div class="scene-detail__header">
       <div>
-        <h2 class="page-title">Scene Detail</h2>
-        <p class="page-subtitle">Manage baseline image and polygon ROIs.</p>
+        <h2 class="page-title">{{ t('scene.detailTitle') }}</h2>
+        <p class="page-subtitle">{{ t('scene.detailSubtitle') }}</p>
       </div>
       <div class="scene-detail__actions">
         <el-upload :show-file-list="false" :before-upload="uploadBaseline" accept="image/*">
-          <el-button type="primary">Upload Baseline</el-button>
+          <el-button type="primary">{{ t('common.button.uploadBaseline') }}</el-button>
         </el-upload>
-        <el-button :loading="snapshotLoading" @click="captureSnapshot">Trigger Snapshot</el-button>
+        <el-button :loading="snapshotLoading" @click="captureSnapshot">{{ t('common.button.triggerSnapshot') }}</el-button>
       </div>
     </div>
 
     <el-skeleton v-if="loading" :rows="8" animated />
-    <el-empty v-else-if="scene === null" description="Scene not found" />
+    <el-empty v-else-if="scene === null" :description="t('common.empty.sceneNotFound')" />
     <el-row v-else :gutter="20">
       <el-col :xs="24" :lg="16">
         <el-descriptions :column="2" border class="scene-detail__info">
-          <el-descriptions-item label="ID">{{ scene.id }}</el-descriptions-item>
-          <el-descriptions-item label="Name">{{ scene.name }}</el-descriptions-item>
-          <el-descriptions-item label="Camera ID">{{ scene.camera_id }}</el-descriptions-item>
-          <el-descriptions-item label="Baseline">{{ scene.baseline_image_path ?? 'Not configured' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('common.table.id')">{{ scene.id }}</el-descriptions-item>
+          <el-descriptions-item :label="t('common.table.name')">{{ scene.name }}</el-descriptions-item>
+          <el-descriptions-item :label="t('common.table.cameraId')">{{ scene.camera_id }}</el-descriptions-item>
+          <el-descriptions-item :label="t('common.table.baseline')">{{ scene.baseline_image_path ?? t('common.notConfigured') }}</el-descriptions-item>
         </el-descriptions>
 
         <RoiCanvas
@@ -36,9 +36,9 @@
         <el-card shadow="never">
           <template #header>
             <div class="panel-header">
-              <span>ROIs</span>
+              <span>{{ t('roi.title') }}</span>
               <el-button :type="drawingEnabled ? 'warning' : 'primary'" size="small" @click="toggleDrawing">
-                {{ drawingEnabled ? 'Cancel Create' : 'Create ROI' }}
+                {{ drawingEnabled ? t('common.button.cancelCreate') : t('common.button.createRoi') }}
               </el-button>
             </div>
           </template>
@@ -46,24 +46,24 @@
           <el-alert
             v-if="drawingEnabled"
             class="scene-detail__draw-alert"
-            title="Click points on the image, then double-click to close the polygon."
+            :title="t('roi.hint')"
             type="info"
             show-icon
             :closable="false"
           />
 
           <el-table :data="rois" row-key="id" stripe>
-            <el-table-column prop="name" label="Name" min-width="120" />
-            <el-table-column label="Points" width="80">
+            <el-table-column prop="name" :label="t('common.table.name')" min-width="120" />
+            <el-table-column :label="t('common.table.points')" width="80">
               <template #default="{ row }">{{ row.geometry.points.length }}</template>
             </el-table-column>
-            <el-table-column label="Actions" width="90">
+            <el-table-column :label="t('common.table.actions')" width="90">
               <template #default="{ row }">
-                <el-button type="danger" link @click="confirmDeleteRoi(row.id, row.name)">Delete</el-button>
+                <el-button type="danger" link @click="confirmDeleteRoi(row.id, row.name)">{{ t('common.button.delete') }}</el-button>
               </template>
             </el-table-column>
             <template #empty>
-              <span class="empty-note">No ROIs yet.</span>
+              <span class="empty-note">{{ t('common.empty.noRois') }}</span>
             </template>
           </el-table>
         </el-card>
@@ -76,6 +76,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { UploadRawFile } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import type { Roi, RoiGeometry, Scene } from '@/api/types';
@@ -83,6 +84,7 @@ import RoiCanvas from '@/components/RoiCanvas.vue';
 import { createRoi, deleteRoi, getScene, listRois, triggerSnapshot, updateSceneBaseline } from '@/api/resources';
 
 const route = useRoute();
+const { t } = useI18n();
 const scene = ref<Scene | null>(null);
 const rois = ref<Roi[]>([]);
 const loading = ref(false);
@@ -104,7 +106,7 @@ function normalizeImageUrl(path: string | null): string | null {
 
 async function loadScene(): Promise<void> {
   if (!Number.isInteger(sceneId.value)) {
-    ElMessage.error('Invalid scene ID.');
+    ElMessage.error(t('scene.toastInvalidId'));
     return;
   }
 
@@ -114,7 +116,7 @@ async function loadScene(): Promise<void> {
     scene.value = sceneData;
     rois.value = roiData;
   } catch {
-    ElMessage.error('Failed to load scene.');
+    ElMessage.error(t('scene.toastLoadFailedScene'));
   } finally {
     loading.value = false;
   }
@@ -126,9 +128,9 @@ async function uploadBaseline(file: UploadRawFile): Promise<boolean> {
   }
   try {
     scene.value = await updateSceneBaseline(scene.value.id, file);
-    ElMessage.success('Baseline image updated.');
+    ElMessage.success(t('scene.toastBaselineUpdated'));
   } catch {
-    ElMessage.error('Failed to upload baseline image.');
+    ElMessage.error(t('scene.toastBaselineFailed'));
   }
   return false;
 }
@@ -142,31 +144,31 @@ async function savePolygon(geometry: RoiGeometry): Promise<void> {
     return;
   }
   try {
-    const result = await ElMessageBox.prompt('Enter ROI name', 'Create ROI', {
-      confirmButtonText: 'Create',
-      cancelButtonText: 'Cancel',
+    const result = await ElMessageBox.prompt(t('roi.promptName'), t('roi.promptCreate'), {
+      confirmButtonText: t('common.button.create'),
+      cancelButtonText: t('common.button.cancel'),
       inputPattern: /\S+/,
-      inputErrorMessage: 'ROI name is required.',
+      inputErrorMessage: t('roi.nameRequired'),
     });
     const roi = await createRoi(scene.value.id, { name: result.value, geometry });
     rois.value.push(roi);
     drawingEnabled.value = false;
-    ElMessage.success('ROI created.');
+    ElMessage.success(t('roi.toastCreated'));
   } catch (error: unknown) {
     if (error === 'cancel') return;
-    ElMessage.error('Failed to create ROI.');
+    ElMessage.error(t('roi.toastCreateFailed'));
   }
 }
 
 async function confirmDeleteRoi(roiId: number, roiName: string): Promise<void> {
   try {
-    await ElMessageBox.confirm(`Delete ROI "${roiName}"?`, 'Delete ROI', { type: 'warning' });
+    await ElMessageBox.confirm(t('roi.deleteConfirm', { name: roiName }), t('roi.deleteTitle'), { type: 'warning' });
     await deleteRoi(roiId);
     rois.value = rois.value.filter((item) => item.id !== roiId);
-    ElMessage.success('ROI deleted.');
+    ElMessage.success(t('roi.toastDeleted'));
   } catch (error: unknown) {
     if (error === 'cancel') return;
-    ElMessage.error('Failed to delete ROI.');
+    ElMessage.error(t('roi.toastDeleteFailed'));
   }
 }
 
@@ -184,9 +186,9 @@ async function captureSnapshot(): Promise<void> {
   snapshotLoading.value = true;
   try {
     scene.value = await triggerSnapshot(scene.value.camera_id);
-    ElMessage.success('Snapshot triggered.');
+    ElMessage.success(t('scene.toastSnapshotTriggered'));
   } catch {
-    ElMessage.error('Failed to trigger snapshot.');
+    ElMessage.error(t('scene.toastSnapshotFailed'));
   } finally {
     snapshotLoading.value = false;
   }

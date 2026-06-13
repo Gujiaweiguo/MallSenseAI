@@ -2,25 +2,25 @@
   <section class="page-card">
     <div class="page-header">
       <div>
-        <h2 class="page-title">Scenes</h2>
-        <p class="page-subtitle">Scene list for all cameras.</p>
+        <h2 class="page-title">{{ t('scene.title') }}</h2>
+        <p class="page-subtitle">{{ t('scene.subtitle') }}</p>
       </div>
-      <el-button type="primary" @click="openCreateDialog">Create Scene</el-button>
+      <el-button type="primary" @click="openCreateDialog">{{ t('common.button.createScene') }}</el-button>
     </div>
 
     <el-table v-loading="loading" :data="pagedScenes" row-key="id" stripe>
-      <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="name" label="Name" min-width="180">
+      <el-table-column prop="id" :label="t('common.table.id')" width="90" />
+      <el-table-column prop="name" :label="t('common.table.name')" min-width="180">
         <template #default="{ row }">
           <RouterLink :to="`/scenes/${row.id}`">{{ row.name }}</RouterLink>
         </template>
       </el-table-column>
-      <el-table-column prop="camera_id" label="Camera ID" width="130" />
-      <el-table-column label="Baseline" min-width="220">
-        <template #default="{ row }">{{ row.baseline_image_path ?? 'Not configured' }}</template>
+      <el-table-column prop="camera_id" :label="t('common.table.cameraId')" width="130" />
+      <el-table-column :label="t('common.table.baseline')" min-width="220">
+        <template #default="{ row }">{{ row.baseline_image_path ?? t('common.notConfigured') }}</template>
       </el-table-column>
       <template #empty>
-        <span class="empty-note">No scenes found.</span>
+        <span class="empty-note">{{ t('common.empty.noScenes') }}</span>
       </template>
     </el-table>
 
@@ -37,21 +37,21 @@
     <!-- Create Scene dialog -->
     <el-dialog
       v-model="dialogVisible"
-      title="Create Scene"
+      :title="t('scene.createScene')"
       width="440px"
       destroy-on-close
     >
       <el-form :model="form" label-width="100px" @submit.prevent="handleCreate">
-        <el-form-item label="Name" required>
-          <el-input v-model="form.name" placeholder="Scene name" />
+        <el-form-item :label="t('scene.formName')" required>
+          <el-input v-model="form.name" :placeholder="t('scene.phName')" />
         </el-form-item>
-        <el-form-item label="Camera ID" required>
+        <el-form-item :label="t('scene.formCameraId')" required>
           <el-input-number v-model="form.camera_id" :min="1" controls-position="right" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleCreate">Create</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.button.cancel') }}</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleCreate">{{ t('common.button.create') }}</el-button>
       </template>
     </el-dialog>
   </section>
@@ -60,10 +60,13 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { createScene, listScenes } from '@/api/resources';
 import type { Scene } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
+
+const { t } = useI18n();
 
 const scenes = ref<Scene[]>([]);
 const loading = ref(false);
@@ -93,18 +96,18 @@ function openCreateDialog(): void {
 
 async function handleCreate(): Promise<void> {
   if (!form.name) {
-    ElMessage.error('Scene name is required.');
+    ElMessage.error(t('scene.toastNameRequired'));
     return;
   }
 
   submitLoading.value = true;
   try {
     await createScene({ camera_id: form.camera_id, name: form.name });
-    ElMessage.success('Scene created.');
+    ElMessage.success(t('scene.toastCreated'));
     dialogVisible.value = false;
     await loadScenes();
   } catch {
-    ElMessage.error('Failed to create scene.');
+    ElMessage.error(t('scene.toastCreateFailed'));
   } finally {
     submitLoading.value = false;
   }
@@ -115,7 +118,7 @@ async function loadScenes(): Promise<void> {
   try {
     scenes.value = await listScenes({ limit: DEFAULT_LIST_LIMIT });
   } catch {
-    ElMessage.error('Failed to load scenes.');
+    ElMessage.error(t('scene.toastLoadFailed'));
   } finally {
     loading.value = false;
   }
