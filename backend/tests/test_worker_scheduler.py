@@ -257,6 +257,7 @@ class TestTick:
         scheduler.add_camera(2)
         # Make both due by setting next_run_at to past
         now = time.monotonic()
+        scheduler._last_sync_at = now
         scheduler._scheduled[1].next_run_at = now - 1
         scheduler._scheduled[2].next_run_at = now - 1
 
