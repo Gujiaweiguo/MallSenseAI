@@ -1,7 +1,9 @@
 import client from './client';
 import type {
   Alert,
+  Camera,
   DashboardStats,
+  DetectionEvent,
   PaginatedQuery,
   Roi,
   RoiCreatePayload,
@@ -26,7 +28,7 @@ export async function listAlerts(params: PaginatedQuery = {}): Promise<Alert[]> 
   return response.data;
 }
 
-export async function listWorkOrders(params: PaginatedQuery = {}): Promise<WorkOrder[]> {
+export async function listWorkOrders(params: PaginatedQuery & { alert_id?: number } = {}): Promise<WorkOrder[]> {
   const response = await client.get<WorkOrder[]>('/work-orders', { params });
   return response.data;
 }
@@ -142,5 +144,25 @@ export async function transitionWorkOrder(id: number, body: { target: string; no
 
 export async function assignWorkOrder(id: number, body: { user_id: number }): Promise<WorkOrder> {
   const { data } = await client.post<WorkOrder>(`/work-orders/${id}/assign`, body);
+  return data;
+}
+
+export async function getAlert(id: number): Promise<Alert> {
+  const { data } = await client.get<Alert>(`/alerts/${id}`);
+  return data;
+}
+
+export async function getCamera(id: number): Promise<Camera> {
+  const { data } = await client.get<Camera>(`/cameras/${id}`);
+  return data;
+}
+
+export async function listDetectionEvents(params?: PaginatedQuery & {
+  camera_id?: number;
+  roi_id?: number;
+  detected_after?: string;
+  detected_before?: string;
+}): Promise<DetectionEvent[]> {
+  const { data } = await client.get<DetectionEvent[]>('/detection-events', { params });
   return data;
 }

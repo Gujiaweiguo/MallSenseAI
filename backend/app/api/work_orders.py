@@ -13,8 +13,16 @@ router = APIRouter(prefix="/work-orders", tags=["work-orders"], dependencies=[De
 
 
 @router.get("", response_model=list[WorkOrderResponse])
-def list_work_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> list[WorkOrder]:
-    return paginate(select(WorkOrder).order_by(WorkOrder.id), db, skip, limit)
+def list_work_orders(
+    alert_id: int | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+) -> list[WorkOrder]:
+    stmt = select(WorkOrder).order_by(WorkOrder.id)
+    if alert_id is not None:
+        stmt = stmt.where(WorkOrder.alert_id == alert_id)
+    return paginate(stmt, db, skip, limit)
 
 
 @router.get("/{work_order_id}", response_model=WorkOrderResponse)

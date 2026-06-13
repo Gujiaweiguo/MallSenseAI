@@ -6,6 +6,7 @@ import AlertListView from '@/views/AlertListView.vue';
 import CameraDetailView from '@/views/CameraDetailView.vue';
 import CameraListView from '@/views/CameraListView.vue';
 import DashboardView from '@/views/DashboardView.vue';
+import DetectionEventListView from '@/views/DetectionEventListView.vue';
 import LoginView from '@/views/LoginView.vue';
 import RuleConfigView from '@/views/RuleConfigView.vue';
 import SceneDetailView from '@/views/SceneDetailView.vue';
@@ -74,6 +75,12 @@ const routes: RouteRecordRaw[] = [
         name: 'alerts',
         component: AlertListView,
         meta: { title: 'Alerts' },
+      },
+      {
+        path: 'detection-events',
+        name: 'detection-events',
+        component: DetectionEventListView,
+        meta: { title: 'Detection Events' },
       },
       {
         path: 'work-orders',

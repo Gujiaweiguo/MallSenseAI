@@ -20,18 +20,18 @@
       </el-select>
     </div>
 
-    <el-table v-loading="loading" :data="pagedAlerts" row-key="id" stripe>
+    <el-table v-loading="loading" :data="pagedAlerts" row-key="id" stripe @row-click="handleRowClick">
       <el-table-column prop="id" label="ID" width="90" />
       <el-table-column prop="camera_id" label="Camera" width="110" />
       <el-table-column prop="alert_type" label="Type" min-width="180" />
       <el-table-column prop="severity" label="Severity" width="130">
         <template #default="{ row }">
-          <el-tag :type="severityType(row.severity)">{{ row.severity }}</el-tag>
+          <el-tag :type="alertSeverityTagType(row.severity)">{{ row.severity }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="Status" width="150">
         <template #default="{ row }">
-          <el-tag :type="alertStatusType(row.status)">{{ row.status }}</el-tag>
+          <el-tag :type="alertStatusTagType(row.status)">{{ row.status }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="Detected At" min-width="190">
@@ -40,15 +40,15 @@
       <el-table-column label="Actions" width="260" fixed="right">
         <template #default="{ row }">
           <template v-if="row.status === 'new'">
-            <el-button type="success" size="small" :loading="acting === row.id" @click="handleConfirm(row.id)">
+            <el-button type="success" size="small" :loading="acting === row.id" @click.stop="handleConfirm(row.id)">
               Confirm
             </el-button>
-            <el-button type="warning" size="small" :loading="acting === row.id" @click="handleFalsePositive(row.id)">
+            <el-button type="warning" size="small" :loading="acting === row.id" @click.stop="handleFalsePositive(row.id)">
               False Positive
             </el-button>
           </template>
           <template v-else-if="row.status === 'confirmed'">
-            <el-button type="primary" size="small" :loading="acting === row.id" @click="handleResolve(row.id)">
+            <el-button type="primary" size="small" :loading="acting === row.id" @click.stop="handleResolve(row.id)">
               Resolve
             </el-button>
           </template>
@@ -71,6 +71,8 @@
         layout="total, sizes, prev, pager, next"
       />
     </div>
+
+    <AlertDetailDrawer v-model:visible="drawerVisible" :alert="selectedAlert" />
   </section>
 </template>
 
@@ -78,6 +80,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onMounted, ref, watch } from 'vue';
 
+import AlertDetailDrawer from '@/components/AlertDetailDrawer.vue';
 import {
   listAlerts,
   confirmAlert,
@@ -87,6 +90,7 @@ import {
 import type { Alert } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 import { useAlertEvents } from '@/composables/useAlertEvents';
+import { alertSeverityTagType, alertStatusTagType } from '@/utils/tagType';
 
 const alerts = ref<Alert[]>([]);
 const loading = ref(false);
@@ -96,6 +100,8 @@ const pageSize = ref(10);
 const severityFilter = ref('');
 const statusFilter = ref('');
 const alertWs = useAlertEvents();
+const drawerVisible = ref(false);
+const selectedAlert = ref<Alert | null>(null);
 
 const filteredAlerts = computed(() => {
   let result = alerts.value;
@@ -113,29 +119,13 @@ const pagedAlerts = computed(() => {
   return filteredAlerts.value.slice(start, start + pageSize.value);
 });
 
-function severityType(severity: string): 'success' | 'warning' | 'info' | 'danger' {
-  if (severity === 'critical' || severity === 'high') {
-    return 'danger';
-  }
-  if (severity === 'medium') {
-    return 'warning';
-  }
-  if (severity === 'low') {
-    return 'success';
-  }
-  return 'info';
-}
-
-function alertStatusType(status: string): 'success' | 'warning' | 'info' | 'danger' {
-  if (status === 'resolved') return 'success';
-  if (status === 'confirmed') return 'warning';
-  if (status === 'new') return 'info';
-  if (status === 'false_positive') return 'danger';
-  return 'info';
-}
-
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+
+function handleRowClick(row: Alert): void {
+  selectedAlert.value = row;
+  drawerVisible.value = true;
 }
 
 async function loadAlerts(): Promise<void> {

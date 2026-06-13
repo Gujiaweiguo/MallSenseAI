@@ -29,6 +29,10 @@
           <el-icon><Warning /></el-icon>
           <span>Alerts</span>
         </el-menu-item>
+        <el-menu-item index="/detection-events">
+          <el-icon><Monitor /></el-icon>
+          <span>Detection Events</span>
+        </el-menu-item>
         <el-menu-item index="/work-orders">
           <el-icon><Tickets /></el-icon>
           <span>Work Orders</span>
@@ -48,6 +52,11 @@
         <div class="main-layout__account">
           <span class="main-layout__user">{{ auth.user?.display_name ?? auth.user?.username }}</span>
           <el-tag size="small" type="info">{{ auth.user?.role ?? 'viewer' }}</el-tag>
+          <el-badge :value="unreadAlertCount" :hidden="unreadAlertCount === 0">
+            <el-button class="main-layout__notification-button" text @click="handleAlertNavigation">
+              <el-icon :size="18"><Bell /></el-icon>
+            </el-button>
+          </el-badge>
           <el-button type="primary" plain @click="handleLogout">Logout</el-button>
         </div>
       </el-header>
@@ -60,8 +69,8 @@
 </template>
 
 <script setup lang="ts">
-import { DataBoard, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
-import { computed, onMounted, onUnmounted } from 'vue';
+import { Bell, DataBoard, Monitor, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/auth/store';
@@ -71,6 +80,7 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const alertWs = useAlertEvents();
+const unreadAlertCount = ref(0);
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/cameras')) {
@@ -84,6 +94,46 @@ function handleLogout(): void {
   auth.logout();
   void router.replace('/login');
 }
+
+function playNotificationSound(): void {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 800;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+  } catch {
+    // ignore if audio not available
+  }
+}
+
+function handleAlertNavigation(): void {
+  unreadAlertCount.value = 0;
+  void router.push('/alerts');
+}
+
+watch(
+  () => alertWs.lastEvent.value,
+  (event) => {
+    if (!event || event.event_type !== 'created') return;
+    unreadAlertCount.value += 1;
+    playNotificationSound();
+  },
+);
+
+watch(
+  () => route.path,
+  (path) => {
+    if (path === '/alerts') {
+      unreadAlertCount.value = 0;
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   if (auth.isAuthenticated) {
@@ -161,6 +211,11 @@ onUnmounted(() => {
 .main-layout__user {
   color: var(--ms-color-header-text);
   font-weight: 600;
+}
+
+.main-layout__notification-button {
+  padding: 6px;
+  color: var(--ms-color-header-text);
 }
 
 .main-layout__content {

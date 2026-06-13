@@ -176,6 +176,19 @@ export interface DashboardStats {
   work_orders_closed: number;
 }
 
+export type DetectorType = 'image_compare' | 'yolo' | 'blue_box';
+
+export interface DetectionEvent {
+  id: number;
+  camera_id: number;
+  roi_id: number | null;
+  detector_type: DetectorType;
+  confidence: number | null;
+  evidence_path: string | null;
+  event_metadata: Record<string, unknown>;
+  detected_at: string;
+}
+
 export interface AlertEvent {
   event_type: AlertEventType;
   alert_id: number;
