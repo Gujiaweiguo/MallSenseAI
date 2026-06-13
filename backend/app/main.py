@@ -61,8 +61,19 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 @app.get("/api/health")
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
+def health_check() -> JSONResponse:
+    from sqlalchemy import text
+    from backend.app.db.session import engine
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"status": "degraded", "database": "unreachable"},
+        )
+    return JSONResponse(content={"status": "ok", "database": "connected"})
 
 
 app.include_router(auth_router, prefix="/api")
