@@ -129,6 +129,7 @@
       "ruleType": {
         "obstruction_duration": "阻塞时长",
         "obstruction_area": "阻塞面积",
+        "forbidden_zone": "禁入区域",
         "litter": "垃圾",
         "fire_smoke": "火灾烟雾"
       },
@@ -405,6 +406,12 @@
     "formMinArea": "最小面积",
     "formMaxCount": "最大数量",
     "formDurationSeconds": "持续秒数",
+    "formMinStaySeconds": "最小停留秒数",
+    "formCooldownSeconds": "冷却秒数",
+    "formThresholdRatio": "阈值比例",
+    "formMinDuration": "最小持续秒数",
+    "formConfidenceThreshold": "置信度阈值",
+    "formMinAreaRatio": "最小面积比例",
     "formPriority": "优先级",
     "formEnabled": "启用",
     "phRoi": "可选ROI",

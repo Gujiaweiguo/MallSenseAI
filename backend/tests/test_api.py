@@ -163,6 +163,76 @@ class TestRoiCRUD:
 
 
 # ---------------------------------------------------------------------------
+# Rule Config
+# ---------------------------------------------------------------------------
+
+
+class TestRuleConfig:
+    def _create_camera(self, client: TestClient, auth_headers: dict) -> dict:
+        return client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+
+    def test_create_rule_with_config(self, client: TestClient, auth_headers: dict):
+        cam = self._create_camera(client, auth_headers)
+        resp = client.post("/api/rules", json={
+            "camera_id": cam["id"],
+            "roi_id": None,
+            "rule_type": "obstruction_duration",
+            "config": {"threshold": 3000, "min_stay_seconds": 30, "cooldown_seconds": 60},
+            "priority": 1,
+            "enabled": True,
+        }, headers=auth_headers)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["config"]["threshold"] == 3000
+        assert data["config"]["min_stay_seconds"] == 30
+
+    def test_create_forbidden_zone_rule(self, client: TestClient, auth_headers: dict):
+        cam = self._create_camera(client, auth_headers)
+        resp = client.post("/api/rules", json={
+            "camera_id": cam["id"],
+            "roi_id": None,
+            "rule_type": "forbidden_zone",
+            "config": {"min_stay_seconds": 5, "cooldown_seconds": 60},
+            "priority": 1,
+            "enabled": True,
+        }, headers=auth_headers)
+        assert resp.status_code == 201
+        assert resp.json()["rule_type"] == "forbidden_zone"
+
+    def test_create_fire_smoke_rule(self, client: TestClient, auth_headers: dict):
+        cam = self._create_camera(client, auth_headers)
+        resp = client.post("/api/rules", json={
+            "camera_id": cam["id"],
+            "roi_id": None,
+            "rule_type": "fire_smoke",
+            "config": {"confidence_threshold": 0.5, "min_area_ratio": 0.01, "cooldown_seconds": 30},
+            "priority": 1,
+            "enabled": True,
+        }, headers=auth_headers)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["rule_type"] == "fire_smoke"
+        assert data["config"]["confidence_threshold"] == 0.5
+
+    def test_update_rule_config(self, client: TestClient, auth_headers: dict):
+        cam = self._create_camera(client, auth_headers)
+        created = client.post("/api/rules", json={
+            "camera_id": cam["id"],
+            "roi_id": None,
+            "rule_type": "obstruction_area",
+            "config": {"threshold_ratio": 0.05, "min_duration_seconds": 10, "cooldown_seconds": 30},
+            "priority": 1,
+            "enabled": True,
+        }, headers=auth_headers).json()
+
+        resp = client.put(f"/api/rules/{created['id']}", json={
+            "config": {"threshold_ratio": 0.1, "min_duration_seconds": 20, "cooldown_seconds": 60},
+        }, headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["config"]["threshold_ratio"] == 0.1
+
+
+# ---------------------------------------------------------------------------
 # Alert / Rule / User
 # ---------------------------------------------------------------------------
 

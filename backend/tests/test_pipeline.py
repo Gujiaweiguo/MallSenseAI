@@ -85,7 +85,8 @@ class TestProcessInspectionFireSmoke:
         mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
 
         mock_load.return_value = CameraDetectionContext(
-            camera_id=1, rois=[], active_rules=[]
+            camera_id=1, rois=[], active_rules=[],
+            fire_smoke_config={"confidence_threshold": 0.5},
         )
 
         mock_handler.handle_fire_smoke_detection.return_value = MagicMock(id=42)

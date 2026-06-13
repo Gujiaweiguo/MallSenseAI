@@ -81,7 +81,7 @@ class DetectionPipeline:
             self._cache.set(context)
 
         obstruction = await self._run_obstruction(image_bytes, context)
-        fire_smoke = await self._run_fire_smoke(image_bytes)
+        fire_smoke = await self._run_fire_smoke(image_bytes, context)
 
         evidence_path: str | None = None
         if obstruction or fire_smoke:
@@ -158,12 +158,16 @@ class DetectionPipeline:
             logger.exception("Obstruction detector error")
             return []
 
-    async def _run_fire_smoke(self, image_bytes: bytes) -> list[DetectionResult]:
+    async def _run_fire_smoke(
+        self, image_bytes: bytes, context: CameraDetectionContext
+    ) -> list[DetectionResult]:
+        if context.fire_smoke_config is None:
+            return []
         detector = self._registry.get_detector("fire_smoke")
         if detector is None or not detector.is_enabled:
             return []
         try:
-            return await detector.detect(image_bytes, [], {})
+            return await detector.detect(image_bytes, [], context.fire_smoke_config)
         except Exception:
             logger.exception("Fire/smoke detector error")
             return []

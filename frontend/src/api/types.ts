@@ -2,7 +2,7 @@ export type CameraStatus = 'active' | 'inactive' | 'maintenance';
 export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type AlertStatus = 'pending' | 'confirmed' | 'false_positive' | 'resolved';
 export type AlertEventType = 'created' | 'confirmed' | 'resolved' | 'false_positive' | 'escalated';
-export type RuleType = 'obstruction_duration' | 'obstruction_area' | 'litter' | 'fire_smoke';
+export type RuleType = 'obstruction_duration' | 'obstruction_area' | 'forbidden_zone' | 'litter' | 'fire_smoke';
 export type WorkOrderStatus = 'open' | 'in_progress' | 'closed' | 'cancelled';
 export type UserRole = 'admin' | 'operator' | 'viewer';
 export type NotificationChannelType = 'wecom' | 'sms' | 'email';
@@ -114,10 +114,7 @@ export interface RoiUpdatePayload {
 }
 
 export interface RuleThresholdConfig {
-  threshold?: number;
-  min_area?: number;
-  max_count?: number;
-  duration_seconds?: number;
+  [key: string]: number;
 }
 
 export interface Rule {
@@ -125,7 +122,7 @@ export interface Rule {
   camera_id: number;
   roi_id: number | null;
   rule_type: RuleType;
-  threshold_config: RuleThresholdConfig;
+  config: Record<string, number>;
   priority: number;
   enabled: boolean;
   created_at: string;
@@ -136,7 +133,7 @@ export interface RuleCreatePayload {
   camera_id: number;
   roi_id: number | null;
   rule_type: RuleType;
-  threshold_config: RuleThresholdConfig;
+  config: Record<string, number>;
   priority: number;
   enabled: boolean;
 }

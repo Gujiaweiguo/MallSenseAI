@@ -7,7 +7,9 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.models.entities import ROI, Rule, Scene
+from typing import Any
+
+from backend.app.models.entities import ROI, Rule, RuleType, Scene
 from backend.app.rules.engine import ActiveRule
 from shared.coordinate_standard import Geometry, Point, PolygonGeometry, RectGeometry
 
@@ -26,6 +28,7 @@ class CameraDetectionContext:
     camera_id: int
     rois: list[RoiContext]
     active_rules: list[ActiveRule]
+    fire_smoke_config: dict[str, Any] | None = None
 
 
 class CameraContextCache:
@@ -114,10 +117,19 @@ def load_camera_context(camera_id: int, db: Session) -> CameraDetectionContext:
             )
         )
 
+    fire_smoke_rule = next(
+        (r for r in rules if r.rule_type == RuleType.fire_smoke),
+        None,
+    )
+    fire_smoke_config: dict[str, Any] | None = (
+        dict(fire_smoke_rule.config or {}) if fire_smoke_rule else None
+    )
+
     return CameraDetectionContext(
         camera_id=camera_id,
         rois=roi_contexts,
         active_rules=active_rules,
+        fire_smoke_config=fire_smoke_config,
     )
 
 

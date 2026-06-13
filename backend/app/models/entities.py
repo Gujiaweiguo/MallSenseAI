@@ -30,6 +30,7 @@ class ZoneType(str, enum.Enum):
 class RuleType(str, enum.Enum):
     obstruction_duration = "obstruction_duration"
     obstruction_area = "obstruction_area"
+    forbidden_zone = "forbidden_zone"
     litter = "litter"
     fire_smoke = "fire_smoke"
 

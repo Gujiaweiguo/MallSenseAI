@@ -25,7 +25,7 @@
             </template>
           </el-table-column>
           <el-table-column :label="t('common.table.thresholds')" min-width="220">
-            <template #default="{ row }">{{ formatThresholds(row.threshold_config) }}</template>
+            <template #default="{ row }">{{ formatConfig(row.config) }}</template>
           </el-table-column>
           <el-table-column :label="t('common.table.actions')" width="140" fixed="right">
             <template #default="{ row }">
@@ -44,11 +44,12 @@
           <template #header>{{ editingRuleId === null ? t('rule.createRuleTitle') : t('rule.editRuleTitle', { id: editingRuleId }) }}</template>
           <el-form label-position="top" :model="form">
             <el-form-item :label="t('rule.formRuleType')">
-              <el-select v-model="form.rule_type" class="rule-config__full">
-        <el-option :label="t('common.enum.ruleType.obstruction_duration')" value="obstruction_duration" />
-        <el-option :label="t('common.enum.ruleType.obstruction_area')" value="obstruction_area" />
-        <el-option :label="t('common.enum.ruleType.litter')" value="litter" />
-        <el-option :label="t('common.enum.ruleType.fire_smoke')" value="fire_smoke" />
+              <el-select v-model="form.rule_type" class="rule-config__full" @change="onRuleTypeChange">
+                <el-option :label="t('common.enum.ruleType.obstruction_duration')" value="obstruction_duration" />
+                <el-option :label="t('common.enum.ruleType.obstruction_area')" value="obstruction_area" />
+                <el-option :label="t('common.enum.ruleType.forbidden_zone')" value="forbidden_zone" />
+                <el-option :label="t('common.enum.ruleType.fire_smoke')" value="fire_smoke" />
+                <el-option :label="t('common.enum.ruleType.litter')" value="litter" />
               </el-select>
             </el-form-item>
             <el-form-item :label="t('rule.formRoi')">
@@ -56,18 +57,72 @@
                 <el-option v-for="roi in rois" :key="roi.id" :label="roi.name" :value="roi.id" />
               </el-select>
             </el-form-item>
-            <el-form-item :label="t('rule.formThreshold')">
-              <el-input-number v-model="form.threshold_config.threshold" :min="0" :step="0.05" class="rule-config__full" />
-            </el-form-item>
-            <el-form-item :label="t('rule.formMinArea')">
-              <el-input-number v-model="form.threshold_config.min_area" :min="0" class="rule-config__full" />
-            </el-form-item>
-            <el-form-item :label="t('rule.formMaxCount')">
-              <el-input-number v-model="form.threshold_config.max_count" :min="0" class="rule-config__full" />
-            </el-form-item>
-            <el-form-item :label="t('rule.formDurationSeconds')">
-              <el-input-number v-model="form.threshold_config.duration_seconds" :min="0" class="rule-config__full" />
-            </el-form-item>
+
+            <!-- obstruction_duration -->
+            <template v-if="form.rule_type === 'obstruction_duration'">
+              <el-form-item :label="t('rule.formThreshold')">
+                <el-input-number v-model="form.config.threshold" :min="0" :step="0.05" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formMinStaySeconds')">
+                <el-input-number v-model="form.config.min_stay_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formCooldownSeconds')">
+                <el-input-number v-model="form.config.cooldown_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+            </template>
+
+            <!-- obstruction_area -->
+            <template v-else-if="form.rule_type === 'obstruction_area'">
+              <el-form-item :label="t('rule.formThresholdRatio')">
+                <el-input-number v-model="form.config.threshold_ratio" :min="0" :step="0.01" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formMinDuration')">
+                <el-input-number v-model="form.config.min_duration_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formCooldownSeconds')">
+                <el-input-number v-model="form.config.cooldown_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+            </template>
+
+            <!-- forbidden_zone -->
+            <template v-else-if="form.rule_type === 'forbidden_zone'">
+              <el-form-item :label="t('rule.formMinStaySeconds')">
+                <el-input-number v-model="form.config.min_stay_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formCooldownSeconds')">
+                <el-input-number v-model="form.config.cooldown_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+            </template>
+
+            <!-- fire_smoke -->
+            <template v-else-if="form.rule_type === 'fire_smoke'">
+              <el-form-item :label="t('rule.formConfidenceThreshold')">
+                <el-input-number v-model="form.config.confidence_threshold" :min="0" :max="1" :step="0.05" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formMinAreaRatio')">
+                <el-input-number v-model="form.config.min_area_ratio" :min="0" :step="0.005" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formCooldownSeconds')">
+                <el-input-number v-model="form.config.cooldown_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+            </template>
+
+            <!-- litter -->
+            <template v-else-if="form.rule_type === 'litter'">
+              <el-form-item :label="t('rule.formConfidenceThreshold')">
+                <el-input-number v-model="form.config.min_confidence" :min="0" :max="1" :step="0.05" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formMinAreaRatio')">
+                <el-input-number v-model="form.config.min_area_ratio" :min="0" :step="0.005" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formDurationSeconds')">
+                <el-input-number v-model="form.config.duration_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+              <el-form-item :label="t('rule.formCooldownSeconds')">
+                <el-input-number v-model="form.config.cooldown_seconds" :min="0" class="rule-config__full" />
+              </el-form-item>
+            </template>
+
             <el-form-item :label="t('rule.formPriority')">
               <el-input-number v-model="form.priority" :min="0" class="rule-config__full" />
             </el-form-item>
@@ -94,17 +149,37 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { createRule, deleteRule, listRois, listRules, listScenes, updateRule } from '@/api/resources';
-import type { Roi, Rule, RuleCreatePayload, RuleThresholdConfig, RuleType, Scene } from '@/api/types';
+import type { Roi, Rule, RuleCreatePayload, RuleType, Scene } from '@/api/types';
 
 const { t } = useI18n();
 
 interface RuleForm {
   rule_type: RuleType;
   roi_id: number | null;
-  threshold_config: RuleThresholdConfig;
+  config: Record<string, number>;
   priority: number;
   enabled: boolean;
 }
+
+const DEFAULT_CONFIGS: Record<RuleType, Record<string, number>> = {
+  obstruction_duration: { threshold: 3000, min_stay_seconds: 2, cooldown_seconds: 60 },
+  obstruction_area: { threshold_ratio: 0.05, min_duration_seconds: 10, cooldown_seconds: 30 },
+  forbidden_zone: { min_stay_seconds: 5, cooldown_seconds: 60 },
+  fire_smoke: { confidence_threshold: 0.5, min_area_ratio: 0.01, cooldown_seconds: 30 },
+  litter: { min_confidence: 0.35, min_area_ratio: 0.005, duration_seconds: 10, cooldown_seconds: 30 },
+};
+
+const CONFIG_LABEL_KEYS: Record<string, string> = {
+  threshold: 'rule.formThreshold',
+  min_stay_seconds: 'rule.formMinStaySeconds',
+  cooldown_seconds: 'rule.formCooldownSeconds',
+  threshold_ratio: 'rule.formThresholdRatio',
+  min_duration_seconds: 'rule.formMinDuration',
+  confidence_threshold: 'rule.formConfidenceThreshold',
+  min_area_ratio: 'rule.formMinAreaRatio',
+  duration_seconds: 'rule.formDurationSeconds',
+  min_confidence: 'rule.formConfidenceThreshold',
+};
 
 const route = useRoute();
 const cameraId = computed(() => Number(route.params.id));
@@ -118,30 +193,21 @@ const form = reactive<RuleForm>(defaultForm());
 
 function defaultForm(): RuleForm {
   return {
-      rule_type: 'obstruction_duration',
+    rule_type: 'obstruction_duration',
     roi_id: null,
-    threshold_config: {
-      threshold: 0.8,
-      min_area: 0,
-      max_count: 1,
-      duration_seconds: 0,
-    },
+    config: { ...DEFAULT_CONFIGS.obstruction_duration },
     priority: 1,
     enabled: true,
   };
 }
 
-function assignForm(next: RuleForm): void {
-  form.rule_type = next.rule_type;
-  form.roi_id = next.roi_id;
-  form.threshold_config = { ...next.threshold_config };
-  form.priority = next.priority;
-  form.enabled = next.enabled;
+function onRuleTypeChange(): void {
+  form.config = { ...DEFAULT_CONFIGS[form.rule_type] };
 }
 
 function resetForm(): void {
   editingRuleId.value = null;
-  assignForm(defaultForm());
+  Object.assign(form, defaultForm());
 }
 
 function openCreateForm(): void {
@@ -150,21 +216,11 @@ function openCreateForm(): void {
 
 function openEditForm(rule: Rule): void {
   editingRuleId.value = rule.id;
-  assignForm({
-    rule_type: rule.rule_type,
-    roi_id: rule.roi_id,
-    threshold_config: { ...rule.threshold_config },
-    priority: rule.priority,
-    enabled: rule.enabled,
-  });
-}
-
-function compactThresholdConfig(config: RuleThresholdConfig): RuleThresholdConfig {
-  const entries = Object.entries(config).filter((entry): entry is [keyof RuleThresholdConfig, number] => {
-    const value = entry[1];
-    return typeof value === 'number' && Number.isFinite(value);
-  });
-  return Object.fromEntries(entries) as RuleThresholdConfig;
+  form.rule_type = rule.rule_type;
+  form.roi_id = rule.roi_id;
+  form.config = { ...rule.config };
+  form.priority = rule.priority;
+  form.enabled = rule.enabled;
 }
 
 function payloadFromForm(): RuleCreatePayload {
@@ -172,30 +228,23 @@ function payloadFromForm(): RuleCreatePayload {
     camera_id: cameraId.value,
     rule_type: form.rule_type,
     roi_id: form.roi_id,
-    threshold_config: compactThresholdConfig(form.threshold_config),
+    config: { ...form.config },
     priority: form.priority,
     enabled: form.enabled,
   };
 }
 
 function roiName(roiId: number | null): string {
-  if (roiId === null) {
-    return t('rule.allScene');
-  }
+  if (roiId === null) return t('rule.allScene');
   return rois.value.find((roi) => roi.id === roiId)?.name ?? `${t('common.table.roi')} #${roiId}`;
 }
 
-function formatThresholds(config: RuleThresholdConfig): string {
-  const labels: Partial<Record<keyof RuleThresholdConfig, string>> = {
-    threshold: t('rule.formThreshold'),
-    min_area: t('rule.formMinArea'),
-    max_count: t('rule.formMaxCount'),
-    duration_seconds: t('rule.formDurationSeconds'),
-  };
-  const pairs = Object.entries(config).filter(([, value]) => value !== undefined);
-  return pairs.length === 0
-    ? t('common.none')
-    : pairs.map(([key, value]) => `${labels[key as keyof RuleThresholdConfig] ?? key}: ${value}`).join(', ');
+function formatConfig(config: Record<string, number>): string {
+  const entries = Object.entries(config).filter(([, v]) => v !== undefined && v !== null);
+  if (entries.length === 0) return t('common.none');
+  return entries
+    .map(([key, value]) => `${t(CONFIG_LABEL_KEYS[key] ?? key)}: ${value}`)
+    .join(', ');
 }
 
 async function loadData(): Promise<void> {

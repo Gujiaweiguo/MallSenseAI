@@ -129,6 +129,7 @@
       "ruleType": {
         "obstruction_duration": "Obstruction Duration",
         "obstruction_area": "Obstruction Area",
+        "forbidden_zone": "Forbidden Zone",
         "litter": "Litter",
         "fire_smoke": "Fire/Smoke"
       },
@@ -405,6 +406,12 @@
     "formMinArea": "Minimum Area",
     "formMaxCount": "Maximum Count",
     "formDurationSeconds": "Duration Seconds",
+    "formMinStaySeconds": "Min Stay Seconds",
+    "formCooldownSeconds": "Cooldown Seconds",
+    "formThresholdRatio": "Threshold Ratio",
+    "formMinDuration": "Min Duration Seconds",
+    "formConfidenceThreshold": "Confidence Threshold",
+    "formMinAreaRatio": "Min Area Ratio",
     "formPriority": "Priority",
     "formEnabled": "Enabled",
     "phRoi": "Optional ROI",
