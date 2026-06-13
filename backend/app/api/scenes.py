@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from backend.app.auth.dependencies import get_current_user, require_role
 from backend.app.api.utils import Camera, Scene, commit_refresh, ensure_exists, get_or_404, paginate, select, set_if_provided
+from backend.app.camera.adapter import CameraCaptureError, DahuaCameraAdapter
 from backend.app.db.session import get_db
 from backend.app.models import UserRole
 from backend.app.schemas.scene import SceneCreate, SceneResponse, SceneUpdate
@@ -69,3 +70,28 @@ def get_baseline(scene_id: int, db: Session = Depends(get_db)) -> FileResponse:
         from fastapi import HTTPException
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Baseline image not found")
     return FileResponse(scene.baseline_image_path)
+
+
+@router.post("/{scene_id}/snapshot", response_model=SceneResponse, dependencies=[Depends(require_role(UserRole.operator))])
+async def capture_scene_snapshot(scene_id: int, db: Session = Depends(get_db)) -> Scene:
+    scene = get_or_404(db, Scene, scene_id)
+    camera = get_or_404(db, Camera, scene.camera_id)
+
+    adapter = DahuaCameraAdapter(
+        ip=camera.ip,
+        port=camera.port,
+        username=camera.username or "admin",
+        password=camera.password_hash,
+        timeout=15.0,
+    )
+
+    try:
+        image_bytes = await adapter.capture_snapshot()
+    except CameraCaptureError:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Camera capture failed")
+
+    BASELINE_DIR.mkdir(parents=True, exist_ok=True)
+    target = BASELINE_DIR / f"scene_{scene_id}.jpg"
+    target.write_bytes(image_bytes)
+    scene.baseline_image_path = str(target)
+    return commit_refresh(db, scene)

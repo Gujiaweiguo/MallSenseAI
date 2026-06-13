@@ -120,8 +120,8 @@ export async function deleteRule(ruleId: number): Promise<void> {
   await client.delete(`/rules/${ruleId}`);
 }
 
-export async function triggerSnapshot(cameraId: number): Promise<Scene> {
-  const response = await client.post<Scene>(`/cameras/${cameraId}/snapshot`);
+export async function triggerSnapshot(sceneId: number): Promise<Scene> {
+  const response = await client.post<Scene>(`/scenes/${sceneId}/snapshot`);
   return response.data;
 }
 

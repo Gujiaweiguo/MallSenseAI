@@ -246,7 +246,7 @@ async function captureSnapshot(): Promise<void> {
   }
   snapshotLoading.value = true;
   try {
-    scene.value = await triggerSnapshot(scene.value.camera_id);
+    scene.value = await triggerSnapshot(scene.value.id);
     ElMessage.success(t('scene.toastSnapshotTriggered'));
   } catch {
     ElMessage.error(t('scene.toastSnapshotFailed'));
