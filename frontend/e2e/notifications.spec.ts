@@ -208,3 +208,75 @@ test('deleting a group removes it from the table', async ({ page }) => {
   // Group should be gone
   await expect(page.locator('.el-table')).not.toContainText('Ops Team');
 });
+
+test('editing a channel updates its config', async ({ page }) => {
+  await mockLogin(page);
+
+  let groups = [
+    {
+      id: 1,
+      name: 'Ops Team',
+      channels: { severities: ['high', 'critical'] },
+      enabled: true,
+      created_at: '2026-06-01T00:00:00Z',
+      updated_at: '2026-06-01T00:00:00Z',
+      notification_channels: [
+        {
+          id: 1,
+          group_id: 1,
+          channel_type: 'wecom',
+          config: { webhook_url: 'https://old-webhook.example.com' },
+          enabled: true,
+        },
+      ],
+    },
+  ];
+
+  let updatedConfig: Record<string, unknown> | null = null;
+
+  await page.route('**/api/notification-groups**', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+
+    if (request.method() === 'GET') {
+      await fulfillJson(route, groups);
+      return;
+    }
+
+    await route.fallback();
+  });
+
+  await page.route('**/api/notification-groups/channels/1', async (route) => {
+    const request = route.request();
+    if (request.method() === 'PUT') {
+      const body = request.postDataJSON();
+      updatedConfig = body as Record<string, unknown>;
+      groups = groups.map((g) => ({
+        ...g,
+        notification_channels: g.notification_channels.map((ch) =>
+          ch.id === 1 ? { ...ch, config: body.config, enabled: body.enabled } : ch,
+        ),
+      }));
+      await fulfillJson(route, groups[0].notification_channels[0]);
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.goto('/notifications');
+
+  await page.locator('.el-table__row').first().click();
+
+  await page.locator('.notif-config__channel-list').getByRole('button', { name: 'Edit' }).click();
+
+  const webhookInput = page.locator('input[placeholder*="qyapi"]');
+  await expect(webhookInput).toHaveValue('https://old-webhook.example.com');
+
+  await webhookInput.fill('https://new-webhook.example.com');
+  await page.getByRole('button', { name: 'Update' }).click();
+
+  await expect.poll(() => updatedConfig).toEqual({
+    config: { webhook_url: 'https://new-webhook.example.com' },
+    enabled: true,
+  });
+});
