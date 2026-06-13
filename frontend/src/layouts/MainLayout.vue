@@ -37,6 +37,10 @@
           <el-icon><Tickets /></el-icon>
           <span>Work Orders</span>
         </el-menu-item>
+        <el-menu-item index="/notifications">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>Notifications</span>
+        </el-menu-item>
         <el-menu-item v-if="auth.isAdmin" index="/users">
           <el-icon><User /></el-icon>
           <span>Users</span>
@@ -69,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { Bell, DataBoard, Monitor, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
+import { Bell, ChatDotRound, DataBoard, Monitor, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 

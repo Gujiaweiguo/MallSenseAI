@@ -8,6 +8,7 @@ import CameraListView from '@/views/CameraListView.vue';
 import DashboardView from '@/views/DashboardView.vue';
 import DetectionEventListView from '@/views/DetectionEventListView.vue';
 import LoginView from '@/views/LoginView.vue';
+import NotificationConfigView from '@/views/NotificationConfigView.vue';
 import RuleConfigView from '@/views/RuleConfigView.vue';
 import SceneDetailView from '@/views/SceneDetailView.vue';
 import SceneListView from '@/views/SceneListView.vue';
@@ -87,6 +88,12 @@ const routes: RouteRecordRaw[] = [
         name: 'work-orders',
         component: WorkOrderListView,
         meta: { title: 'Work Orders' },
+      },
+      {
+        path: 'notifications',
+        name: 'notifications',
+        component: NotificationConfigView,
+        meta: { title: 'Notifications' },
       },
       {
         path: 'users',
