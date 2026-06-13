@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.app.api import alert_workflow, alerts, cameras, dashboard, detection_events, rois, rules, scenes, users, work_orders
+from backend.app.api import alert_workflow, alerts, cameras, dashboard, detection_events, notifications, rois, rules, scenes, users, work_orders
 from backend.app.alerts.ws import router as ws_router
 from backend.app.auth.router import router as auth_router
 from backend.app.core.config import get_settings
@@ -77,3 +77,4 @@ app.include_router(users.router, prefix="/api")
 app.include_router(alert_workflow.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(detection_events.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
