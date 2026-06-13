@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { createFakeJwt, expectLoggedOut, mockApi } from './helpers';
+import { createFakeJwt, catchAllApi, expectLoggedOut, mockApi } from './helpers';
 
 test('auth guard redirects unauthenticated users to login', async ({ page }) => {
   await page.goto('/users');
@@ -11,6 +11,12 @@ test('auth guard redirects unauthenticated users to login', async ({ page }) => 
 
 test('login, admin navigation, and logout work', async ({ page }) => {
   const token = createFakeJwt({ sub: '1' });
+
+  await catchAllApi(page);
+
+  await page.addInitScript(() => {
+    localStorage.setItem('mallsenseai.locale', 'en');
+  });
 
   await mockApi(page, 'POST', '/auth/login', { access_token: token, token_type: 'bearer' });
   await mockApi(page, 'GET', '/users/1', {

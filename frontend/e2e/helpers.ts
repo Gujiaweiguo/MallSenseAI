@@ -32,6 +32,25 @@ function matchesPath(requestUrl: string, path: string): boolean {
   return url.pathname === normalizedPath;
 }
 
+export async function catchAllApi(page: Page): Promise<void> {
+  // Must be registered BEFORE specific mocks — Playwright routes are LIFO.
+  // Returns safe defaults so unmocked requests never reach the real backend
+  // (which would 401 on fake JWTs and trigger the Axios interceptor redirect).
+  // Uses function matcher to avoid catching Vite source files like /src/api/resources.ts
+  await page.route(
+    (url: URL) => url.pathname.startsWith('/api/'),
+    async (route) => {
+      const method = route.request().method();
+      const body = method === 'GET' ? '[]' : '{}';
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body,
+      });
+    },
+  );
+}
+
 export async function mockApi<T>(
   page: Page,
   method: string,
@@ -71,6 +90,9 @@ export async function mockLogin(
     updated_at: '2026-01-01T00:00:00Z',
   };
   const token = createFakeJwt({ sub: String(user.id) });
+
+  // Catch-all must be registered FIRST — see catchAllApi docs.
+  await catchAllApi(page);
 
   await page.addInitScript(
     ({ authToken, authUser, tokenStorageKey, userStorageKey, localeKey, localeVal }) => {
