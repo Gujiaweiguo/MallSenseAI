@@ -107,6 +107,7 @@
                   <el-button size="small" :loading="testingChannelId === channel.id" @click="handleTestChannel(channel.id)">
                     Test
                   </el-button>
+                  <el-button size="small" type="primary" @click="openEditChannelForm(channel)">Edit</el-button>
                   <el-button size="small" type="danger" @click="confirmDeleteChannel(channel.id)">Delete</el-button>
                 </div>
               </div>
@@ -121,7 +122,12 @@
               @submit.prevent="submitChannelForm"
             >
               <el-form-item label="Channel Type">
-                <el-select v-model="channelForm.channel_type" class="notif-config__full" @change="resetChannelConfig">
+                <el-select
+                  v-model="channelForm.channel_type"
+                  class="notif-config__full"
+                  :disabled="editingChannelId !== null"
+                  @change="resetChannelConfig"
+                >
                   <el-option label="WeCom" value="wecom" />
                   <el-option label="SMS" value="sms" />
                   <el-option label="Email" value="email" />
@@ -174,7 +180,9 @@
               </el-form-item>
               <div class="notif-config__form-actions">
                 <el-button @click="channelFormVisible = false">Cancel</el-button>
-                <el-button type="primary" :loading="savingChannel" @click="submitChannelForm">Save</el-button>
+                <el-button type="primary" :loading="savingChannel" @click="submitChannelForm">
+                  {{ editingChannelId === null ? 'Save' : 'Update' }}
+                </el-button>
               </div>
             </el-form>
           </el-card>
@@ -195,10 +203,12 @@ import {
   deleteNotificationGroup,
   listNotificationGroups,
   testNotificationChannel,
+  updateNotificationChannel,
   updateNotificationGroup,
 } from '@/api/resources';
 import type {
   AlertSeverity,
+  NotificationChannel,
   NotificationChannelCreatePayload,
   NotificationChannelType,
   NotificationGroup,
@@ -234,6 +244,7 @@ const loading = ref(false);
 const savingGroup = ref(false);
 const savingChannel = ref(false);
 const selectedGroupId = ref<number | null>(null);
+const editingChannelId = ref<number | null>(null);
 const channelFormVisible = ref(false);
 const testingChannelId = ref<number | null>(null);
 const groupForm = reactive<GroupForm>(defaultGroupForm());
@@ -300,13 +311,40 @@ function resetChannelConfig(): void {
 }
 
 function openChannelForm(): void {
+  editingChannelId.value = null;
   assignChannelForm(defaultChannelForm());
+  channelFormVisible.value = true;
+}
+
+function openEditChannelForm(channel: NotificationChannel): void {
+  editingChannelId.value = channel.id;
+  const config = channel.config;
+  const form = defaultChannelForm();
+  form.channel_type = channel.channel_type;
+  if (channel.channel_type === 'wecom') {
+    form.webhook_url = (config.webhook_url as string) ?? '';
+  } else if (channel.channel_type === 'sms') {
+    form.provider = ((config.provider as SmsProvider) ?? 'stub');
+    form.phone_numbers = Array.isArray(config.phone_numbers)
+      ? (config.phone_numbers as string[]).join(', ')
+      : '';
+    form.account_sid = (config.account_sid as string) ?? '';
+    form.auth_token = (config.auth_token as string) ?? '';
+    form.from_number = (config.from_number as string) ?? '';
+  } else {
+    form.to_address = (config.to_address as string) ?? '';
+    form.smtp_host = (config.smtp_host as string) ?? '';
+    form.smtp_port = (config.smtp_port as number) ?? 25;
+  }
+  form.enabled = channel.enabled;
+  assignChannelForm(form);
   channelFormVisible.value = true;
 }
 
 function selectGroup(group: NotificationGroup): void {
   selectedGroupId.value = group.id;
   channelFormVisible.value = false;
+  editingChannelId.value = null;
   assignGroupForm({
     name: group.name,
     severities: toAlertSeverities(group.channels.severities),
@@ -446,12 +484,20 @@ async function submitChannelForm(): Promise<void> {
 
   savingChannel.value = true;
   try {
-    await createNotificationChannel(selectedGroupId.value, channelPayloadFromForm());
-    ElMessage.success('Notification channel created.');
+    if (editingChannelId.value === null) {
+      await createNotificationChannel(selectedGroupId.value, channelPayloadFromForm());
+      ElMessage.success('Notification channel created.');
+    } else {
+      await updateNotificationChannel(editingChannelId.value, {
+        config: channelConfigFromForm(),
+        enabled: channelForm.enabled,
+      });
+      ElMessage.success('Notification channel updated.');
+    }
     channelFormVisible.value = false;
     await loadGroups();
   } catch {
-    ElMessage.error('Failed to create notification channel.');
+    ElMessage.error('Failed to save notification channel.');
   } finally {
     savingChannel.value = false;
   }
