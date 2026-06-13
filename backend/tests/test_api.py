@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
-from backend.app.models import Camera, DetectionEvent, DetectorType
+from backend.app.models import Alert, Camera, DetectionEvent, DetectorType
 from backend.tests.conftest import TestingSessionLocal
 
 # ---------------------------------------------------------------------------
@@ -114,6 +114,62 @@ class TestAlerts:
         resp = client.get("/api/alerts", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json() == []
+
+    def test_export_csv(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        db.add(Alert(
+            camera_id=cam["id"],
+            roi_id=None,
+            rule_id=None,
+            alert_type="obstruction_area",
+            severity="high",
+            status="pending",
+            evidence_image_path=None,
+            detected_at=datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc),
+            resolved_at=None,
+            event_metadata={},
+        ))
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/alerts/export", headers=auth_headers)
+        assert resp.status_code == 200
+        assert "text/csv" in resp.headers["content-type"]
+        assert "attachment" in resp.headers["content-disposition"]
+        lines = resp.text.strip().splitlines()
+        assert lines[0] == "id,camera_id,alert_type,severity,status,detected_at,resolved_at"
+        assert "obstruction_area" in lines[1]
+        assert "high" in lines[1]
+        assert "pending" in lines[1]
+
+    def test_export_csv_with_severity_filter(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        db.add(Alert(
+            camera_id=cam["id"], roi_id=None, rule_id=None, alert_type="obstruction_area",
+            severity="high", status="pending", evidence_image_path=None,
+            detected_at=datetime(2026, 6, 1, 10, 0, 0, tzinfo=timezone.utc),
+            resolved_at=None, event_metadata={},
+        ))
+        db.add(Alert(
+            camera_id=cam["id"], roi_id=None, rule_id=None, alert_type="obstruction_area",
+            severity="low", status="pending", evidence_image_path=None,
+            detected_at=datetime(2026, 6, 1, 11, 0, 0, tzinfo=timezone.utc),
+            resolved_at=None, event_metadata={},
+        ))
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/alerts/export?severity=high", headers=auth_headers)
+        assert resp.status_code == 200
+        lines = resp.text.strip().splitlines()
+        assert len(lines) == 2
+        assert "high" in lines[1]
+
+    def test_export_requires_auth(self, client: TestClient):
+        resp = client.get("/api/alerts/export")
+        assert resp.status_code == 401
 
 
 class TestRules:
