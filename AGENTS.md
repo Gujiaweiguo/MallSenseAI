@@ -11,21 +11,21 @@
 MallSenseAI/
 ├── backend/              # FastAPI backend (Python 3.10)
 │   ├── app/
-│   │   ├── main.py       # 13 routers, CORS, exception handlers, lifespan
-│   │   ├── api/          # 12 routers: cameras, scenes, ROIs, rules, alerts, work-orders, users, auth, dashboard, alert-workflow, detection-events, health
+│   │   ├── main.py       # 14 routers, CORS, exception handlers, lifespan
+│   │   ├── api/          # 13 routers: cameras, scenes, ROIs, rules, alerts, work-orders, users, auth, dashboard, alert-workflow, detection-events, notifications, health
 │   │   ├── alerts/       # AlertService, AlertEventBus, CriticalAlertHandler, AlertWebSocketManager
 │   │   ├── detectors/    # BaseDetector ABC, DebrisDetector (YOLO), FireSmokeDetector, DetectorRegistry
 │   │   ├── rules/        # ObstructionRuleEngine (duration/area/forbidden-zone), CooldownTracker
 │   │   └── ...           # core (settings), models (10 ORM), auth (JWT), camera, db, roi, schemas, notifications
-│   ├── tests/            # 244 tests
+│   ├── tests/            # 259 tests
 │   └── pyproject.toml
 ├── frontend/             # Vue 3 + TypeScript + Element Plus SPA
 │   ├── src/
-│   │   ├── views/        # 11 views (Login, Dashboard, CameraList/Detail, SceneList/Detail, AlertList, WorkOrderList, UserList, RuleConfig, DetectionEventList)
+│   │   ├── views/        # 12 views (Login, Dashboard, CameraList/Detail, SceneList/Detail, AlertList, WorkOrderList, UserList, RuleConfig, DetectionEventList, NotificationConfig)
 │   │   ├── components/   # RoiCanvas.vue, AlertDetailDrawer
 │   │   ├── composables/  # useAlertEvents (WebSocket)
 │   │   └── ...           # layouts, api, auth, utils, router
-│   └── e2e/              # 17 Playwright e2e tests
+│   └── e2e/              # 21 Playwright e2e tests
 ├── workers/              # Asyncio inspection worker system
 │   ├── scheduler.py      # InspectionScheduler — periodic capture with failure backoff
 │   ├── executor.py       # InspectionExecutor + BatchExecutor — concurrent camera capture
@@ -47,8 +47,8 @@ MallSenseAI/
 | `python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 5380` | FastAPI backend (dev) |
 | `cd frontend && npm run dev` | Vue 3 dev server on port 5373, proxies `/api` → `:5380` |
 | `cd frontend && npm run build` | Production build (vue-tsc + vite) |
-| `python3 -m pytest backend/tests/ -v` | Run 244 backend tests |
-| `cd frontend && npx playwright test` | Run 17 e2e tests |
+| `python3 -m pytest backend/tests/ -v` | Run 259 backend tests |
+| `cd frontend && npx playwright test` | Run 21 e2e tests |
 | `python3 -m workers.run` | Start inspection scheduler (asyncio worker) |
 
 **CI (GitHub Actions)**: On push/PR to `main` — backend pytest (Python 3.10) + frontend vue-tsc + vite build (Node 22) + Playwright e2e (Chromium)
@@ -66,10 +66,12 @@ MallSenseAI/
 - **Detection pipeline**: `scheduler.py` → `executor.py` (capture) → detectors (YOLO debris/fire-smoke) → `pipeline._persist_detections()` (audit to `detection_events` table) → `rules/engine.py` → `alerts/service.py` → `notifications/service.py`
 - **Alert lifecycle**: `pending` → `confirmed` → `resolved` (or `false_positive`). Work orders auto-created on confirm.
 - **Real-time push**: WebSocket `/api/ws/alerts` (JWT auth). Frontend `useAlertEvents` composable + notification bell with unread badge and audio beep.
+- **Notifications**: NotificationGroup (severity-filtered) → NotificationChannel (wecom/sms/email). Event bus triggers on high/critical alerts. Config UI at `/notifications`.
+- **Frontend build**: Route-level dynamic imports + vendor chunk separation (vendor-vue, vendor-element). Each view is a 2-12kB lazy-loaded chunk.
 - **Auth**: JWT HS256 via python-jose. Token payload: `sub` (user ID) + `exp` only; frontend resolves user via `GET /api/users/{id}`.
 - **Inspection worker**: Asyncio-based, per-camera intervals, exponential failure backoff (30s→60s→120s→300s), bounded concurrency (default 10), graceful SIGINT/SIGTERM.
 
-## API surface (13 routers, ~55 endpoints)
+## API surface (14 routers, ~65 endpoints)
 
 | Router | Prefix | Key Endpoints |
 |--------|--------|---------------|
@@ -84,18 +86,18 @@ MallSenseAI/
 | users | /api | CRUD (admin bcrypt-hashed passwords) |
 | dashboard | /api | GET /dashboard/stats |
 | detection_events | /api | GET list (filterable by camera_id/roi_id/detected_at), GET by id |
+| notifications | /api | CRUD notification-groups + channels, POST /channels/{id}/test |
 | health | /api | GET /health |
 | ws | /api | WebSocket /ws/alerts |
 
 ## Test coverage
-- **Backend**: 244 — API (23), ROI engine (46), Rule engine (68), Pipeline+DetectionEvent (23), Workers (84)
-- **Frontend e2e**: 17 Playwright tests — auth (2), navigation (2), cameras (1), scenes (1), alerts (1), alert-detail (3), detection-events (4), work-orders (1), users (1), dashboard (1)
+- **Backend**: 259 — API (23), Notification API (15), ROI engine (46), Rule engine (68), Pipeline+DetectionEvent (23), Workers (84)
+- **Frontend e2e**: 21 Playwright tests — auth (2), navigation (2), cameras (1), scenes (1), alerts (1), alert-detail (3), detection-events (4), work-orders (1), users (1), dashboard (1), notifications (4)
 - **CI**: 3 parallel jobs on every push/PR
 
 ## Known issues and gotchas
 - LSP shows "could not be resolved" on all `backend.app.*` imports — workspace config issue, not real errors
 - Root `requirements.txt` is for legacy system only; new platform uses `backend/pyproject.toml`
-- CI backend job uses `pip install -r requirements.txt` (legacy deps) instead of `pip install -e backend/` — needs fixing
 - Detection pipeline v1 uses in-memory event_bus per process — no cross-process messaging (same-process only)
 - YOLO model files (.pt) excluded from Docker image — detectors gracefully degrade if weights missing
 - Backend tests use SQLite; production uses PostgreSQL+pgvector — no integration test for pgvector features
