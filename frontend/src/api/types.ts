@@ -5,6 +5,7 @@ export type AlertEventType = 'created' | 'confirmed' | 'resolved' | 'false_posit
 export type RuleType = 'obstruction_duration' | 'obstruction_area' | 'litter' | 'fire_smoke';
 export type WorkOrderStatus = 'open' | 'in_progress' | 'closed' | 'cancelled';
 export type UserRole = 'admin' | 'operator' | 'viewer';
+export type NotificationChannelType = 'wecom' | 'sms' | 'email';
 
 export interface PaginatedQuery {
   skip?: number;
@@ -196,4 +197,45 @@ export interface AlertEvent {
   severity: AlertSeverity;
   timestamp: string;
   metadata: Record<string, unknown>;
+}
+
+export interface NotificationChannel {
+  id: number;
+  group_id: number;
+  channel_type: NotificationChannelType;
+  config: Record<string, unknown>;
+  enabled: boolean;
+}
+
+export interface NotificationGroup {
+  id: number;
+  name: string;
+  channels: { severities: string[] };
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  notification_channels: NotificationChannel[];
+}
+
+export interface NotificationGroupCreatePayload {
+  name: string;
+  severities: string[];
+  enabled?: boolean;
+}
+
+export interface NotificationGroupUpdatePayload {
+  name?: string;
+  severities?: string[];
+  enabled?: boolean;
+}
+
+export interface NotificationChannelCreatePayload {
+  channel_type: NotificationChannelType;
+  config: Record<string, unknown>;
+  enabled?: boolean;
+}
+
+export interface NotificationChannelUpdatePayload {
+  config?: Record<string, unknown>;
+  enabled?: boolean;
 }

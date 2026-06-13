@@ -4,6 +4,12 @@ import type {
   Camera,
   DashboardStats,
   DetectionEvent,
+  NotificationChannel,
+  NotificationChannelCreatePayload,
+  NotificationChannelUpdatePayload,
+  NotificationGroup,
+  NotificationGroupCreatePayload,
+  NotificationGroupUpdatePayload,
   PaginatedQuery,
   Roi,
   RoiCreatePayload,
@@ -169,5 +175,48 @@ export async function listDetectionEvents(params?: PaginatedQuery & {
   detected_before?: string;
 }): Promise<DetectionEvent[]> {
   const { data } = await client.get<DetectionEvent[]>('/detection-events', { params });
+  return data;
+}
+
+export async function listNotificationGroups(params?: PaginatedQuery): Promise<NotificationGroup[]> {
+  const { data } = await client.get<NotificationGroup[]>('/notification-groups', { params });
+  return data;
+}
+
+export async function getNotificationGroup(id: number): Promise<NotificationGroup> {
+  const { data } = await client.get<NotificationGroup>(`/notification-groups/${id}`);
+  return data;
+}
+
+export async function createNotificationGroup(payload: NotificationGroupCreatePayload): Promise<NotificationGroup> {
+  const { data } = await client.post<NotificationGroup>('/notification-groups', payload);
+  return data;
+}
+
+export async function updateNotificationGroup(id: number, payload: NotificationGroupUpdatePayload): Promise<NotificationGroup> {
+  const { data } = await client.put<NotificationGroup>(`/notification-groups/${id}`, payload);
+  return data;
+}
+
+export async function deleteNotificationGroup(id: number): Promise<void> {
+  await client.delete(`/notification-groups/${id}`);
+}
+
+export async function createNotificationChannel(groupId: number, payload: NotificationChannelCreatePayload): Promise<NotificationChannel> {
+  const { data } = await client.post<NotificationChannel>(`/notification-groups/${groupId}/channels`, payload);
+  return data;
+}
+
+export async function updateNotificationChannel(id: number, payload: NotificationChannelUpdatePayload): Promise<NotificationChannel> {
+  const { data } = await client.put<NotificationChannel>(`/notification-groups/channels/${id}`, payload);
+  return data;
+}
+
+export async function deleteNotificationChannel(id: number): Promise<void> {
+  await client.delete(`/notification-groups/channels/${id}`);
+}
+
+export async function testNotificationChannel(id: number): Promise<{ channel_id: number; success: boolean }> {
+  const { data } = await client.post<{ channel_id: number; success: boolean }>(`/notification-groups/channels/${id}/test`);
   return data;
 }
