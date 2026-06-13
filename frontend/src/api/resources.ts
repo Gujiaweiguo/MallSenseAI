@@ -152,6 +152,11 @@ export async function getAlert(id: number): Promise<Alert> {
   return data;
 }
 
+export async function listCameras(params: PaginatedQuery = {}): Promise<Camera[]> {
+  const response = await client.get<Camera[]>('/cameras', { params });
+  return response.data;
+}
+
 export async function getCamera(id: number): Promise<Camera> {
   const { data } = await client.get<Camera>(`/cameras/${id}`);
   return data;

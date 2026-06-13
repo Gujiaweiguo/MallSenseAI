@@ -22,7 +22,11 @@
 
     <el-table v-loading="loading" :data="pagedAlerts" row-key="id" stripe @row-click="handleRowClick">
       <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="camera_id" label="Camera" width="110" />
+      <el-table-column label="Camera" width="140">
+        <template #default="{ row }">
+          {{ cameraDisplay(row.camera_id) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="alert_type" label="Type" min-width="180" />
       <el-table-column prop="severity" label="Severity" width="130">
         <template #default="{ row }">
@@ -83,16 +87,18 @@ import { computed, onMounted, ref, watch } from 'vue';
 import AlertDetailDrawer from '@/components/AlertDetailDrawer.vue';
 import {
   listAlerts,
+  listCameras,
   confirmAlert,
   markAlertFalsePositive,
   resolveAlert,
 } from '@/api/resources';
-import type { Alert } from '@/api/types';
+import type { Alert, Camera } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 import { useAlertEvents } from '@/composables/useAlertEvents';
 import { alertSeverityTagType, alertStatusTagType } from '@/utils/tagType';
 
 const alerts = ref<Alert[]>([]);
+const cameras = ref<Camera[]>([]);
 const loading = ref(false);
 const acting = ref<number | null>(null);
 const currentPage = ref(1);
@@ -102,6 +108,20 @@ const statusFilter = ref('');
 const alertWs = useAlertEvents();
 const drawerVisible = ref(false);
 const selectedAlert = ref<Alert | null>(null);
+
+const cameraMap = computed(() => {
+  const map = new Map<number, Camera>();
+  for (const c of cameras.value) {
+    map.set(c.id, c);
+  }
+  return map;
+});
+
+function cameraDisplay(cameraId: number): string {
+  const cam = cameraMap.value.get(cameraId);
+  if (!cam) return `#${cameraId}`;
+  return cam.name;
+}
 
 const filteredAlerts = computed(() => {
   let result = alerts.value;
@@ -131,7 +151,12 @@ function handleRowClick(row: Alert): void {
 async function loadAlerts(): Promise<void> {
   loading.value = true;
   try {
-    alerts.value = await listAlerts({ limit: DEFAULT_LIST_LIMIT });
+    const [alertList, cameraList] = await Promise.all([
+      listAlerts({ limit: DEFAULT_LIST_LIMIT }),
+      listCameras({ limit: DEFAULT_LIST_LIMIT }),
+    ]);
+    alerts.value = alertList;
+    cameras.value = cameraList;
   } catch {
     ElMessage.error('Failed to load alerts.');
   } finally {

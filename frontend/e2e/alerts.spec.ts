@@ -56,12 +56,25 @@ test('alerts list, actions, and filtering work', async ({ page }) => {
     await route.fallback();
   });
 
+  await page.route('**/api/cameras**', async (route) => {
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname === '/api/cameras') {
+      await fulfillJson(route, [
+        { id: 1, name: 'Cam 1', location: 'Floor 1', ip: '10.0.0.1', port: 80, status: 'active', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+        { id: 2, name: 'Cam 2', location: 'Floor 2', ip: '10.0.0.2', port: 80, status: 'active', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+      ]);
+      return;
+    }
+    await route.fallback();
+  });
+
   await page.goto('/alerts');
   await expect(page.locator('.el-table')).toContainText('obstruction_duration');
   await expect(page.locator('.el-table')).toContainText('critical');
   await expect(page.locator('.el-table')).toContainText('pending');
   await expect(page.locator('.el-table')).toContainText('fire_smoke');
   await expect(page.locator('.el-table')).toContainText('resolved');
+  await expect(page.locator('.el-table')).toContainText('Cam 1');
+  await expect(page.locator('.el-table')).toContainText('Cam 2');
 
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.locator('.el-table')).toContainText('confirmed');
