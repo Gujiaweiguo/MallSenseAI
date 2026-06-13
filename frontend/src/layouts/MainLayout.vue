@@ -3,7 +3,7 @@
     <el-aside class="main-layout__aside" width="var(--ms-sidebar-width)">
       <div class="main-layout__brand">
         <span class="main-layout__brand-mark">MS</span>
-        <span>MallSenseAI</span>
+        <span>{{ t('common.brand') }}</span>
       </div>
       <el-menu
         class="main-layout__menu"
@@ -15,35 +15,35 @@
       >
         <el-menu-item index="/">
           <el-icon><DataBoard /></el-icon>
-          <span>Dashboard</span>
+          <span>{{ t('nav.dashboard') }}</span>
         </el-menu-item>
         <el-menu-item index="/cameras">
           <el-icon><VideoCamera /></el-icon>
-          <span>Cameras</span>
+          <span>{{ t('nav.cameras') }}</span>
         </el-menu-item>
         <el-menu-item index="/scenes">
           <el-icon><Picture /></el-icon>
-          <span>Scenes</span>
+          <span>{{ t('nav.scenes') }}</span>
         </el-menu-item>
         <el-menu-item index="/alerts">
           <el-icon><Warning /></el-icon>
-          <span>Alerts</span>
+          <span>{{ t('nav.alerts') }}</span>
         </el-menu-item>
         <el-menu-item index="/detection-events">
           <el-icon><Monitor /></el-icon>
-          <span>Detection Events</span>
+          <span>{{ t('nav.detectionEvents') }}</span>
         </el-menu-item>
         <el-menu-item index="/work-orders">
           <el-icon><Tickets /></el-icon>
-          <span>Work Orders</span>
+          <span>{{ t('nav.workOrders') }}</span>
         </el-menu-item>
         <el-menu-item index="/notifications">
           <el-icon><ChatDotRound /></el-icon>
-          <span>Notifications</span>
+          <span>{{ t('nav.notifications') }}</span>
         </el-menu-item>
         <el-menu-item v-if="auth.isAdmin" index="/users">
           <el-icon><User /></el-icon>
-          <span>Users</span>
+          <span>{{ t('nav.users') }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -51,17 +51,18 @@
     <el-container>
       <el-header class="main-layout__header">
         <div>
-          <h1 class="main-layout__title">{{ route.meta.title ?? 'Console' }}</h1>
+          <h1 class="main-layout__title">{{ pageTitle }}</h1>
         </div>
         <div class="main-layout__account">
+          <LocaleSwitcher />
           <span class="main-layout__user">{{ auth.user?.display_name ?? auth.user?.username }}</span>
-          <el-tag size="small" type="info">{{ auth.user?.role ?? 'viewer' }}</el-tag>
+          <el-tag size="small" type="info">{{ t('common.enum.userRole.' + (auth.user?.role ?? 'viewer')) }}</el-tag>
           <el-badge :value="unreadAlertCount" :hidden="unreadAlertCount === 0">
             <el-button class="main-layout__notification-button" text @click="handleAlertNavigation">
               <el-icon :size="18"><Bell /></el-icon>
             </el-button>
           </el-badge>
-          <el-button type="primary" plain @click="handleLogout">Logout</el-button>
+          <el-button type="primary" plain @click="handleLogout">{{ t('common.button.logout') }}</el-button>
         </div>
       </el-header>
 
@@ -75,16 +76,24 @@
 <script setup lang="ts">
 import { Bell, ChatDotRound, DataBoard, Monitor, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue';
 import { useAuthStore } from '@/auth/store';
 import { useAlertEvents } from '@/composables/useAlertEvents';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const alertWs = useAlertEvents();
 const unreadAlertCount = ref(0);
+
+const pageTitle = computed(() => {
+  const titleKey = route.meta.title as string | undefined;
+  return titleKey ? t(titleKey) : t('common.brand');
+});
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/cameras')) {
