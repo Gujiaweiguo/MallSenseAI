@@ -193,6 +193,11 @@ export async function listDetectionEvents(params?: PaginatedQuery & {
   return data;
 }
 
+export async function exportDetectionEvents(params: { camera_id?: number; roi_id?: number } = {}): Promise<Blob> {
+  const response = await client.get('/detection-events/export', { params, responseType: 'blob' });
+  return response.data;
+}
+
 export async function exportAlerts(params: { severity?: string; status?: string } = {}): Promise<Blob> {
   const response = await client.get('/alerts/export', { params, responseType: 'blob' });
   return response.data;

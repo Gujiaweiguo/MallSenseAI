@@ -18,6 +18,7 @@
         <el-option :label="t('common.enum.detectorType.image_compare')" value="image_compare" />
         <el-option :label="t('common.enum.detectorType.blue_box')" value="blue_box" />
       </el-select>
+      <el-button :loading="exporting" style="margin-left: auto" @click="handleExport">{{ t('common.button.export') }}</el-button>
     </div>
 
     <el-table v-loading="loading" :data="pagedEvents" row-key="id" stripe @row-click="handleRowClick">
@@ -69,13 +70,14 @@ import { ElMessage } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { listDetectionEvents } from '@/api/resources';
+import { exportDetectionEvents, listDetectionEvents } from '@/api/resources';
 import type { DetectionEvent, DetectorType } from '@/api/types';
 import { DEFAULT_LIST_LIMIT } from '@/utils/constants';
 
 const { t } = useI18n();
 const events = ref<DetectionEvent[]>([]);
 const loading = ref(false);
+const exporting = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const cameraIdFilter = ref<number | undefined>();
@@ -129,6 +131,26 @@ async function loadEvents(): Promise<void> {
     ElMessage.error(t('detection.toastLoadFailed'));
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleExport(): Promise<void> {
+  exporting.value = true;
+  try {
+    const blob = await exportDetectionEvents(
+      cameraIdFilter.value !== undefined ? { camera_id: cameraIdFilter.value } : {},
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'detection_events.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    ElMessage.success(t('detection.toastExported'));
+  } catch {
+    ElMessage.error(t('detection.toastExportFailed'));
+  } finally {
+    exporting.value = false;
   }
 }
 

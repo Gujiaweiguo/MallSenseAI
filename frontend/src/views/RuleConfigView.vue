@@ -240,7 +240,7 @@ async function submitForm(): Promise<void> {
 
 async function confirmDeleteRule(rule: Rule): Promise<void> {
   try {
-    await ElMessageBox.confirm(t('rule.deleteConfirm', { id: rule.id }), t('rule.deleteTitle'), { type: 'warning' });
+    await ElMessageBox.confirm(t('rule.deleteConfirm', { id: rule.id }), t('rule.deleteTitle'), { type: 'warning', confirmButtonText: t('common.button.confirm'), cancelButtonText: t('common.button.cancel') });
     await deleteRule(rule.id);
     rules.value = rules.value.filter((item) => item.id !== rule.id);
     ElMessage.success(t('rule.toastDeleted'));

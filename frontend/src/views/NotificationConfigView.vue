@@ -468,7 +468,7 @@ async function submitGroupForm(): Promise<void> {
 
 async function confirmDeleteGroup(group: NotificationGroup): Promise<void> {
   try {
-    await ElMessageBox.confirm(t('notification.deleteGroupConfirm', { id: group.id }), t('notification.deleteGroupTitle'), { type: 'warning' });
+    await ElMessageBox.confirm(t('notification.deleteGroupConfirm', { id: group.id }), t('notification.deleteGroupTitle'), { type: 'warning', confirmButtonText: t('common.button.confirm'), cancelButtonText: t('common.button.cancel') });
     await deleteNotificationGroup(group.id);
     ElMessage.success(t('notification.toastGroupDeleted'));
     if (selectedGroupId.value === group.id) {
@@ -507,7 +507,7 @@ async function submitChannelForm(): Promise<void> {
 
 async function confirmDeleteChannel(id: number): Promise<void> {
   try {
-    await ElMessageBox.confirm(t('notification.deleteChannelConfirm', { id }), t('notification.deleteChannelTitle'), { type: 'warning' });
+    await ElMessageBox.confirm(t('notification.deleteChannelConfirm', { id }), t('notification.deleteChannelTitle'), { type: 'warning', confirmButtonText: t('common.button.confirm'), cancelButtonText: t('common.button.cancel') });
     await deleteNotificationChannel(id);
     ElMessage.success(t('notification.toastChannelDeleted'));
     await loadGroups();

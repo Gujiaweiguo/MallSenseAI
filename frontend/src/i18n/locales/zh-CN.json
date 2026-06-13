@@ -328,7 +328,9 @@
     "phCameraId": "摄像头ID",
     "phDetectorType": "检测器类型",
     "metadataTitle": "检测事件元数据",
-    "toastLoadFailed": "加载检测事件失败。"
+    "toastLoadFailed": "加载检测事件失败。",
+    "toastExported": "CSV已导出。",
+    "toastExportFailed": "导出检测事件失败。"
   },
   "workOrder": {
     "title": "工单",

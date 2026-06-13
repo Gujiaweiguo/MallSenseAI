@@ -328,7 +328,9 @@
     "phCameraId": "Camera ID",
     "phDetectorType": "Detector Type",
     "metadataTitle": "Detection Event Metadata",
-    "toastLoadFailed": "Failed to load detection events."
+    "toastLoadFailed": "Failed to load detection events.",
+    "toastExported": "CSV exported.",
+    "toastExportFailed": "Failed to export detection events."
   },
   "workOrder": {
     "title": "Work Orders",

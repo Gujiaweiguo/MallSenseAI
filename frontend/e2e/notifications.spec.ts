@@ -203,7 +203,7 @@ test('deleting a group removes it from the table', async ({ page }) => {
 
   // Click delete and confirm
   await page.locator('.el-table__row').first().getByRole('button', { name: 'Delete' }).click();
-  await page.locator('.el-message-box').getByRole('button', { name: '确定' }).click();
+  await page.locator('.el-message-box').getByRole('button', { name: 'Confirm' }).click();
 
   // Group should be gone
   await expect(page.locator('.el-table')).not.toContainText('Ops Team');

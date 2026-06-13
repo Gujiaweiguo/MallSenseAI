@@ -467,6 +467,31 @@ class TestDetectionEvents:
         assert len(data) == 1
         assert data[0]["camera_id"] == cam1["id"]
 
+    def test_export_csv(self, client: TestClient, auth_headers: dict):
+        cam = client.post("/api/cameras", json=CAMERA_PAYLOAD, headers=auth_headers).json()
+        db = TestingSessionLocal()
+        db.add(
+            DetectionEvent(
+                camera_id=cam["id"],
+                roi_id=None,
+                detector_type=DetectorType.yolo,
+                confidence=0.92,
+                evidence_path=None,
+                event_metadata={},
+                detected_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/detection-events/export", headers=auth_headers)
+        assert resp.status_code == 200
+        assert "text/csv" in resp.headers["content-type"]
+        assert "attachment" in resp.headers["content-disposition"]
+        lines = resp.text.strip().splitlines()
+        assert lines[0] == "id,camera_id,roi_id,detector_type,confidence,detected_at"
+        assert "yolo" in lines[1]
+
     def test_requires_auth(self, client: TestClient):
         resp = client.get("/api/detection-events")
         assert resp.status_code == 401
