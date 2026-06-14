@@ -1,6 +1,6 @@
 <template>
   <section class="page-card scene-detail">
-    <el-page-header :icon="null" @back="$router.back()">
+    <el-page-header :icon="null" @back="goBackToCamera">
       <template #content>
         <span class="scene-detail__breadcrumb">{{ t('scene.detailTitle') }}</span>
       </template>
@@ -100,13 +100,14 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import type { UploadRawFile } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import type { Roi, RoiGeometry, Scene } from '@/api/types';
 import RoiCanvas from '@/components/RoiCanvas.vue';
 import { createRoi, deleteRoi, getScene, listRois, triggerSnapshot, updateRoi, updateSceneBaseline } from '@/api/resources';
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const scene = ref<Scene | null>(null);
 const rois = ref<Roi[]>([]);
@@ -122,6 +123,14 @@ const baselineUrl = computed(() => {
   }
   return `/api/scenes/${scene.value.id}/baseline`;
 });
+
+function goBackToCamera(): void {
+  if (scene.value !== null) {
+    void router.push(`/cameras/${scene.value.camera_id}`);
+  } else {
+    void router.push('/cameras');
+  }
+}
 
 async function loadScene(): Promise<void> {
   if (!Number.isInteger(sceneId.value)) {

@@ -1,6 +1,6 @@
 <template>
   <section class="page-card">
-    <el-page-header :icon="null" @back="$router.back()">
+    <el-page-header :icon="null" @back="router.push('/cameras')">
       <template #content>
         <span>{{ t('camera.detailTitle') }}</span>
       </template>

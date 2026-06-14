@@ -1,8 +1,8 @@
 <template>
   <section class="page-card rule-config">
-    <el-page-header :icon="null" @back="$router.back()">
+    <el-page-header :icon="null" @back="goBackToCamera">
       <template #content>
-        <span>{{ t('rule.title') }}</span>
+        <span>{{ t('rule.title') }} — {{ t('common.table.cameraId') }} {{ cameraId }}</span>
       </template>
     </el-page-header>
     <div class="rule-config__header">
@@ -151,7 +151,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { createRule, deleteRule, listRois, listRules, listScenes, updateRule } from '@/api/resources';
 import type { Roi, Rule, RuleCreatePayload, RuleType, Scene } from '@/api/types';
@@ -187,6 +187,7 @@ const CONFIG_LABEL_KEYS: Record<string, string> = {
 };
 
 const route = useRoute();
+const router = useRouter();
 const cameraId = computed(() => Number(route.params.id));
 const loading = ref(false);
 const saving = ref(false);
@@ -250,6 +251,10 @@ function formatConfig(config: Record<string, number>): string {
   return entries
     .map(([key, value]) => `${t(CONFIG_LABEL_KEYS[key] ?? key)}: ${value}`)
     .join(', ');
+}
+
+function goBackToCamera(): void {
+  void router.push(`/cameras/${cameraId.value}`);
 }
 
 async function loadData(): Promise<void> {
