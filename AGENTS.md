@@ -55,7 +55,8 @@ MallSenseAI/
 
 ## Dev environment
 - **Ports**: backend 5380, frontend 5373 (no conflict with mysqlbot 8000/5173, mi 5280/5273)
-- **Database**: PostgreSQL 16 + pgvector in shared `postgres16` container, `langchat:langchat@localhost:5432/mallsenseai`
+- **Database**: PostgreSQL 16 + pgvector in shared `postgres16` container, `langchat:langchat@localhost:5432/mallsenseai`. **不要用 `docker-compose.dev.yml`** — 它会创建冲突的 postgres 容器抢 5432 端口。直接用已有的 `postgres16` 容器。
+- **首次建库**: `bash scripts/seed-dev.sh` — 一键建库 + 建表 + 种子数据（admin 用户 + 21 摄像头 + 21 场景 + fire_smoke 规则 + 基线图路径）
 - **Config**: `.env` file (see `.env.example`). `CORS_ORIGINS` must be JSON array: `["http://localhost:5373"]`
 - **Python**: 3.10 at `/usr/bin/python3` (`python` not available)
 - **Install**: `pip install -e backend/` for new platform deps; `pip install -r requirements.txt` for legacy deps only
