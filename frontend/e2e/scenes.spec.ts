@@ -64,9 +64,9 @@ test('scene list, detail, and create dialog work', async ({ page }) => {
   await expect(page.locator('.scene-detail__info')).toContainText('Camera ID');
 
   await page.goto('/scenes');
-  await page.getByRole('button', { name: 'Create Scene' }).click();
+  await page.getByRole('button', { name: 'Create Monitor View' }).click();
   const dialog = page.getByRole('dialog');
-  await page.locator('input[placeholder="Scene name"]').fill('Food Court Scene');
+  await page.locator('input[placeholder="Monitor view name"]').fill('Food Court Scene');
   await page.locator('.el-input-number input').fill('3');
   await dialog.getByRole('button', { name: 'Create', exact: true }).click();
   await expect(page.locator('.el-table')).toContainText('Food Court Scene');

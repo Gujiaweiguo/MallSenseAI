@@ -67,7 +67,7 @@ test('dashboard renders stats and charts', async ({ page }) => {
   // Stat cards
   await expect(page.locator('.stat-card').nth(0)).toContainText('Cameras');
   await expect(page.locator('.stat-card').nth(0)).toContainText('21');
-  await expect(page.locator('.stat-card').nth(1)).toContainText('Scenes');
+  await expect(page.locator('.stat-card').nth(1)).toContainText('Monitor Views');
   await expect(page.locator('.stat-card').nth(1)).toContainText('21');
   await expect(page.locator('.stat-card').nth(2)).toContainText('Alerts');
   await expect(page.locator('.stat-card').nth(2)).toContainText('10');

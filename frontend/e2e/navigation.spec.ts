@@ -34,14 +34,14 @@ test('admin can navigate through sidebar routes', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('menuitem', { name: 'Dashboard' })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: 'Cameras' })).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: 'Scenes' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Monitor Views' })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: 'Alerts' })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: 'Work Orders' })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: 'Users' })).toBeVisible();
 
   await page.getByRole('menuitem', { name: 'Cameras' }).click();
   await expect(page).toHaveURL('/cameras');
-  await page.getByRole('menuitem', { name: 'Scenes' }).click();
+  await page.getByRole('menuitem', { name: 'Monitor Views' }).click();
   await expect(page).toHaveURL('/scenes');
   await page.getByRole('menuitem', { name: 'Alerts' }).click();
   await expect(page).toHaveURL('/alerts');

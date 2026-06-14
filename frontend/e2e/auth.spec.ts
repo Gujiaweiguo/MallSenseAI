@@ -62,7 +62,7 @@ test('login, admin navigation, and logout work', async ({ page }) => {
 
   await expect(page).toHaveURL('/');
   await expect(page.locator('.main-layout__title')).toHaveText('Dashboard');
-  await expect(page.locator('.el-menu-item')).toContainText(['Dashboard', 'Cameras', 'Scenes', 'Alerts', 'Work Orders', 'Users']);
+  await expect(page.locator('.el-menu-item')).toContainText(['Dashboard', 'Cameras', 'Monitor Views', 'Alerts', 'Work Orders', 'Users']);
 
   await expect.poll(async () => page.evaluate(() => window.localStorage.getItem('mallsenseai.auth.token'))).toBe(token);
   await expect.poll(async () => page.evaluate(() => window.localStorage.getItem('mallsenseai.auth.user'))).not.toBeNull();
