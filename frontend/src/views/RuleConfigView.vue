@@ -45,7 +45,7 @@
       </el-col>
 
       <el-col :xs="24" :lg="8">
-        <el-card shadow="never">
+        <el-card shadow="never" :class="{ 'rule-config__form--editing': editingRuleId !== null }">
           <template #header>{{ editingRuleId === null ? t('rule.createRuleTitle') : t('rule.editRuleTitle', { id: editingRuleId }) }}</template>
           <el-form label-position="top" :model="form">
             <el-form-item :label="t('rule.formRuleType')">
@@ -328,6 +328,11 @@ onMounted(() => {
 
 .rule-config__full {
   width: 100%;
+}
+
+.rule-config__form--editing {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 0 0 2px var(--el-color-primary-light-8);
 }
 
 .rule-config__form-actions {

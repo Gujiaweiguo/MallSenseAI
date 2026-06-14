@@ -13,8 +13,11 @@ router = APIRouter(prefix="/rules", tags=["rules"], dependencies=[Depends(get_cu
 
 
 @router.get("", response_model=list[RuleResponse])
-def list_rules(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> list[Rule]:
-    return paginate(select(Rule).order_by(Rule.id), db, skip, limit)
+def list_rules(skip: int = 0, limit: int = 100, camera_id: int | None = None, db: Session = Depends(get_db)) -> list[Rule]:
+    stmt = select(Rule).order_by(Rule.id)
+    if camera_id is not None:
+        stmt = stmt.where(Rule.camera_id == camera_id)
+    return paginate(stmt, db, skip, limit)
 
 
 @router.get("/{rule_id}", response_model=RuleResponse)
@@ -25,7 +28,8 @@ def get_rule(rule_id: int, db: Session = Depends(get_db)) -> Rule:
 @router.post("", response_model=RuleResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_role(UserRole.operator))])
 def create_rule(payload: RuleCreate, db: Session = Depends(get_db)) -> Rule:
     ensure_exists(db, Camera, payload.camera_id)
-    ensure_exists(db, ROI, payload.roi_id)
+    if payload.roi_id is not None:
+        ensure_exists(db, ROI, payload.roi_id)
     rule = Rule(**payload.model_dump())
     db.add(rule)
     return commit_refresh(db, rule)
@@ -35,8 +39,10 @@ def create_rule(payload: RuleCreate, db: Session = Depends(get_db)) -> Rule:
 def update_rule(rule_id: int, payload: RuleUpdate, db: Session = Depends(get_db)) -> Rule:
     rule = get_or_404(db, Rule, rule_id)
     data = payload.model_dump(exclude_unset=True)
-    ensure_exists(db, Camera, data.get("camera_id"))
-    ensure_exists(db, ROI, data.get("roi_id"))
+    if data.get("camera_id") is not None:
+        ensure_exists(db, Camera, data["camera_id"])
+    if data.get("roi_id") is not None:
+        ensure_exists(db, ROI, data["roi_id"])
     set_if_provided(rule, data)
     return commit_refresh(db, rule)
 
