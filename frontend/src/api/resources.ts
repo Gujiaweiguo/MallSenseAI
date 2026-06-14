@@ -17,9 +17,12 @@ import type {
   Roi,
   RoiCreatePayload,
   RoiUpdatePayload,
-  Rule,
+  RuleDefinition,
+  RuleDefinitionCreatePayload,
+  RuleDefinitionUpdatePayload,
   RuleCreatePayload,
   RuleUpdatePayload,
+  Rule,
   Scene,
   SceneCreatePayload,
   User,
@@ -118,6 +121,25 @@ export async function updateRule(ruleId: number, data: RuleUpdatePayload): Promi
 
 export async function deleteRule(ruleId: number): Promise<void> {
   await client.delete(`/rules/${ruleId}`);
+}
+
+export async function listRuleDefinitions(): Promise<RuleDefinition[]> {
+  const response = await client.get<RuleDefinition[]>('/rule-definitions');
+  return response.data;
+}
+
+export async function createRuleDefinition(data: RuleDefinitionCreatePayload): Promise<RuleDefinition> {
+  const response = await client.post<RuleDefinition>('/rule-definitions', data);
+  return response.data;
+}
+
+export async function updateRuleDefinition(id: number, data: RuleDefinitionUpdatePayload): Promise<RuleDefinition> {
+  const response = await client.put<RuleDefinition>(`/rule-definitions/${id}`, data);
+  return response.data;
+}
+
+export async function deleteRuleDefinition(id: number): Promise<void> {
+  await client.delete(`/rule-definitions/${id}`);
 }
 
 export async function triggerSnapshot(sceneId: number): Promise<Scene> {

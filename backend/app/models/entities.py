@@ -133,15 +133,29 @@ class ROI(Base, TimestampMixin):
     detection_events: Mapped[list["DetectionEvent"]] = relationship(back_populates="roi")
 
 
+class RuleDefinition(Base, TimestampMixin):
+    __tablename__ = "rule_definitions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    rule_type: Mapped[RuleType] = mapped_column(Enum(RuleType, name="rule_definition_type"), nullable=False)
+    config: Mapped[JsonDict] = mapped_column(JsonbType, nullable=False, default=dict)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    assignments: Mapped[list["Rule"]] = relationship(back_populates="definition")
+
+
 class Rule(Base, TimestampMixin):
     __tablename__ = "rules"
     __table_args__ = (
         Index("ix_rules_camera_id", "camera_id"),
         Index("ix_rules_roi_id", "roi_id"),
         Index("ix_rules_enabled_priority", "enabled", "priority"),
+        Index("ix_rules_definition_id", "definition_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    definition_id: Mapped[int | None] = mapped_column(ForeignKey("rule_definitions.id", ondelete="CASCADE"), nullable=True)
     camera_id: Mapped[int] = mapped_column(ForeignKey("cameras.id", ondelete="CASCADE"), nullable=False)
     roi_id: Mapped[int | None] = mapped_column(ForeignKey("rois.id", ondelete="SET NULL"), nullable=True)
     rule_type: Mapped[RuleType] = mapped_column(Enum(RuleType, name="rule_type"), nullable=False)
@@ -151,6 +165,7 @@ class Rule(Base, TimestampMixin):
 
     camera: Mapped[Camera] = relationship(back_populates="rules")
     roi: Mapped[ROI | None] = relationship(back_populates="rules")
+    definition: Mapped[RuleDefinition | None] = relationship(back_populates="assignments")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="rule")
 
 

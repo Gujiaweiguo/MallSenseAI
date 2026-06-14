@@ -159,6 +159,7 @@
     "alerts": "告警",
     "detectionEvents": "检测事件",
     "workOrders": "工单",
+    "ruleDefinitions": "规则定义",
     "notifications": "通知",
     "users": "用户"
   },
@@ -401,8 +402,7 @@
     "toastLoadFailed": "加载用户失败。"
   },
   "rule": {
-    "title": "规则配置",
-    "subtitle": "配置摄像头 #{id} 的ROI检测规则。",
+    "title": "规则配置",    "subtitle": "配置摄像头 #{id} 的ROI检测规则。",
     "formRuleType": "规则类型",
     "formRoi": "ROI",
     "formThreshold": "阈值",
@@ -430,6 +430,27 @@
     "toastSaveFailed": "保存规则失败。",
     "toastDeleted": "规则已删除。",
     "toastDeleteFailed": "删除规则失败。"
+  },
+  "ruleDef": {
+    "title": "规则定义",
+    "subtitle": "定义可复用的检测规则模板，应用到不同摄像头。",
+    "create": "创建规则定义",
+    "editTitle": "编辑规则定义 #{id}",
+    "description": "描述",
+    "phName": "规则名称，如：标准火灾检测",
+    "empty": "暂无规则定义。",
+    "nameRequired": "规则名称为必填项。",
+    "deleteConfirm": "确定删除规则定义 \"{name}\"？",
+    "deleteTitle": "删除规则定义",
+    "toastCreated": "规则定义已创建。",
+    "toastUpdated": "规则定义已更新。所有应用了该定义的摄像头将自动生效。",
+    "toastSaveFailed": "保存规则定义失败。",
+    "toastDeleted": "规则定义已删除。",
+    "toastDeleteFailed": "删除规则定义失败。可能仍有摄像头在使用此定义。",
+    "toastLoadFailed": "加载规则定义失败。",
+    "selectDefinition": "选择规则定义",
+    "applyToCamera": "应用到摄像头",
+    "noDefinitions": "没有可选规则定义，请先创建。"
   },
   "notification": {
     "title": "通知配置",

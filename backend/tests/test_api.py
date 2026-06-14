@@ -214,7 +214,7 @@ class TestRuleConfig:
         assert data["rule_type"] == "fire_smoke"
         assert data["config"]["confidence_threshold"] == 0.5
 
-    def test_update_rule_config(self, client: TestClient, auth_headers: dict):
+    def test_update_rule_assignment(self, client: TestClient, auth_headers: dict):
         cam = self._create_camera(client, auth_headers)
         created = client.post("/api/rules", json={
             "camera_id": cam["id"],
@@ -226,10 +226,12 @@ class TestRuleConfig:
         }, headers=auth_headers).json()
 
         resp = client.put(f"/api/rules/{created['id']}", json={
-            "config": {"threshold_ratio": 0.1, "min_duration_seconds": 20, "cooldown_seconds": 60},
+            "priority": 5,
+            "enabled": False,
         }, headers=auth_headers)
         assert resp.status_code == 200
-        assert resp.json()["config"]["threshold_ratio"] == 0.1
+        assert resp.json()["priority"] == 5
+        assert resp.json()["enabled"] is False
 
 
 # ---------------------------------------------------------------------------

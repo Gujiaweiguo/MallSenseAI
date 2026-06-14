@@ -65,6 +65,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'scene.detailTitle' },
       },
       {
+        path: 'rule-definitions',
+        name: 'rule-definitions',
+        component: () => import('@/views/RuleDefinitionView.vue'),
+        meta: { title: 'ruleDef.title' },
+      },
+      {
         path: 'alerts',
         name: 'alerts',
         component: () => import('@/views/AlertListView.vue'),

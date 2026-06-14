@@ -9,19 +9,17 @@ from backend.app.models import RuleType
 
 
 class RuleCreate(BaseModel):
+    definition_id: int | None = None
     camera_id: int
     roi_id: int | None = None
-    rule_type: RuleType
+    rule_type: RuleType | None = None
     config: dict[str, Any] = Field(default_factory=dict)
     enabled: bool = True
     priority: int = 100
 
 
 class RuleUpdate(BaseModel):
-    camera_id: int | None = None
     roi_id: int | None = None
-    rule_type: RuleType | None = None
-    config: dict[str, Any] | None = None
     enabled: bool | None = None
     priority: int | None = None
 
@@ -30,6 +28,7 @@ class RuleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    definition_id: int | None
     camera_id: int
     roi_id: int | None
     rule_type: RuleType

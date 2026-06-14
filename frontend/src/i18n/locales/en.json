@@ -159,6 +159,7 @@
     "alerts": "Alerts",
     "detectionEvents": "Detection Events",
     "workOrders": "Work Orders",
+    "ruleDefinitions": "Rule Definitions",
     "notifications": "Notifications",
     "users": "Users"
   },
@@ -430,6 +431,27 @@
     "toastSaveFailed": "Failed to save rule.",
     "toastDeleted": "Rule deleted.",
     "toastDeleteFailed": "Failed to delete rule."
+  },
+  "ruleDef": {
+    "title": "Rule Definitions",
+    "subtitle": "Define reusable detection rule templates to apply across cameras.",
+    "create": "Create Rule Definition",
+    "editTitle": "Edit Rule Definition #{id}",
+    "description": "Description",
+    "phName": "Rule name, e.g., Standard Fire Detection",
+    "empty": "No rule definitions yet.",
+    "nameRequired": "Rule name is required.",
+    "deleteConfirm": "Delete rule definition \"{name}\"?",
+    "deleteTitle": "Delete Rule Definition",
+    "toastCreated": "Rule definition created.",
+    "toastUpdated": "Rule definition updated. All cameras using this definition will take effect automatically.",
+    "toastSaveFailed": "Failed to save rule definition.",
+    "toastDeleted": "Rule definition deleted.",
+    "toastDeleteFailed": "Failed to delete rule definition. It may still be in use by cameras.",
+    "toastLoadFailed": "Failed to load rule definitions.",
+    "selectDefinition": "Select Rule Definition",
+    "applyToCamera": "Apply to Camera",
+    "noDefinitions": "No definitions available. Create one first."
   },
   "notification": {
     "title": "Notification Configuration",

@@ -3,10 +3,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from backend.app.auth.dependencies import get_current_user, require_role
 from backend.app.api.utils import Camera, ROI, Rule, commit_refresh, ensure_exists, get_or_404, paginate, select, set_if_provided
+from backend.app.auth.dependencies import get_current_user, require_role
 from backend.app.db.session import get_db
-from backend.app.models import UserRole
+from backend.app.models import RuleDefinition, UserRole
 from backend.app.schemas.rule import RuleCreate, RuleResponse, RuleUpdate
 
 router = APIRouter(prefix="/rules", tags=["rules"], dependencies=[Depends(get_current_user)])
@@ -30,7 +30,31 @@ def create_rule(payload: RuleCreate, db: Session = Depends(get_db)) -> Rule:
     ensure_exists(db, Camera, payload.camera_id)
     if payload.roi_id is not None:
         ensure_exists(db, ROI, payload.roi_id)
-    rule = Rule(**payload.model_dump())
+
+    if payload.definition_id is not None:
+        definition = get_or_404(db, RuleDefinition, payload.definition_id)
+        rule = Rule(
+            definition_id=definition.id,
+            camera_id=payload.camera_id,
+            roi_id=payload.roi_id,
+            rule_type=definition.rule_type,
+            config=definition.config,
+            enabled=payload.enabled,
+            priority=payload.priority,
+        )
+    else:
+        if payload.rule_type is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Either definition_id or rule_type must be provided")
+        rule = Rule(
+            definition_id=None,
+            camera_id=payload.camera_id,
+            roi_id=payload.roi_id,
+            rule_type=payload.rule_type,
+            config=payload.config,
+            enabled=payload.enabled,
+            priority=payload.priority,
+        )
     db.add(rule)
     return commit_refresh(db, rule)
 
@@ -39,8 +63,6 @@ def create_rule(payload: RuleCreate, db: Session = Depends(get_db)) -> Rule:
 def update_rule(rule_id: int, payload: RuleUpdate, db: Session = Depends(get_db)) -> Rule:
     rule = get_or_404(db, Rule, rule_id)
     data = payload.model_dump(exclude_unset=True)
-    if data.get("camera_id") is not None:
-        ensure_exists(db, Camera, data["camera_id"])
     if data.get("roi_id") is not None:
         ensure_exists(db, ROI, data["roi_id"])
     set_if_provided(rule, data)

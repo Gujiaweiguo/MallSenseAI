@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from backend.app.api import alert_workflow, alerts, cameras, dashboard, detection_events, notifications, rois, rules, scenes, users, work_orders
+from backend.app.api import alert_workflow, alerts, cameras, dashboard, detection_events, notifications, rois, rule_definitions, rules, scenes, users, work_orders
 from backend.app.alerts.ws import router as ws_router
 from backend.app.auth.router import router as auth_router
 from backend.app.core.config import get_settings
@@ -82,6 +82,7 @@ app.include_router(cameras.router, prefix="/api")
 app.include_router(scenes.router, prefix="/api")
 app.include_router(rois.router, prefix="/api")
 app.include_router(rules.router, prefix="/api")
+app.include_router(rule_definitions.router, prefix="/api")
 app.include_router(alerts.router, prefix="/api")
 app.include_router(work_orders.router, prefix="/api")
 app.include_router(users.router, prefix="/api")

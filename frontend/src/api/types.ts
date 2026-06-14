@@ -117,8 +117,32 @@ export interface RuleThresholdConfig {
   [key: string]: number;
 }
 
+export interface RuleDefinition {
+  id: number;
+  name: string;
+  rule_type: RuleType;
+  config: Record<string, number>;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RuleDefinitionCreatePayload {
+  name: string;
+  rule_type: RuleType;
+  config: Record<string, number>;
+  description?: string;
+}
+
+export interface RuleDefinitionUpdatePayload {
+  name?: string;
+  config?: Record<string, number>;
+  description?: string;
+}
+
 export interface Rule {
   id: number;
+  definition_id: number | null;
   camera_id: number;
   roi_id: number | null;
   rule_type: RuleType;
@@ -130,15 +154,18 @@ export interface Rule {
 }
 
 export interface RuleCreatePayload {
+  definition_id: number;
   camera_id: number;
   roi_id: number | null;
-  rule_type: RuleType;
-  config: Record<string, number>;
-  priority: number;
-  enabled: boolean;
+  enabled?: boolean;
+  priority?: number;
 }
 
-export type RuleUpdatePayload = Partial<Omit<RuleCreatePayload, 'camera_id'>>;
+export type RuleUpdatePayload = {
+  roi_id?: number | null;
+  enabled?: boolean;
+  priority?: number;
+};
 
 export interface UserCreatePayload {
   username: string;
