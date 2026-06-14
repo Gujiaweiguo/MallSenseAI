@@ -37,6 +37,10 @@
           <el-icon><Tickets /></el-icon>
           <span>{{ t('nav.workOrders') }}</span>
         </el-menu-item>
+        <el-menu-item index="/rule-definitions">
+          <el-icon><Setting /></el-icon>
+          <span>{{ t('nav.ruleDefinitions') }}</span>
+        </el-menu-item>
         <el-menu-item index="/notifications">
           <el-icon><ChatDotRound /></el-icon>
           <span>{{ t('nav.notifications') }}</span>
@@ -74,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { Bell, ChatDotRound, DataBoard, Monitor, Picture, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
+import { Bell, ChatDotRound, DataBoard, Monitor, Picture, Setting, Tickets, User, VideoCamera, Warning } from '@element-plus/icons-vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
