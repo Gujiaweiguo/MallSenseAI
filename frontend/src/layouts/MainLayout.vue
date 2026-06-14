@@ -25,18 +25,6 @@
           <el-icon><Picture /></el-icon>
           <span>{{ t('nav.scenes') }}</span>
         </el-menu-item>
-        <el-menu-item index="/alerts">
-          <el-icon><Warning /></el-icon>
-          <span>{{ t('nav.alerts') }}</span>
-        </el-menu-item>
-        <el-menu-item index="/detection-events">
-          <el-icon><Monitor /></el-icon>
-          <span>{{ t('nav.detectionEvents') }}</span>
-        </el-menu-item>
-        <el-menu-item index="/work-orders">
-          <el-icon><Tickets /></el-icon>
-          <span>{{ t('nav.workOrders') }}</span>
-        </el-menu-item>
         <el-menu-item index="/rule-definitions">
           <el-icon><Setting /></el-icon>
           <span>{{ t('nav.ruleDefinitions') }}</span>
@@ -44,6 +32,18 @@
         <el-menu-item index="/notifications">
           <el-icon><ChatDotRound /></el-icon>
           <span>{{ t('nav.notifications') }}</span>
+        </el-menu-item>
+        <el-menu-item index="/alerts">
+          <el-icon><Warning /></el-icon>
+          <span>{{ t('nav.alerts') }}</span>
+        </el-menu-item>
+        <el-menu-item index="/work-orders">
+          <el-icon><Tickets /></el-icon>
+          <span>{{ t('nav.workOrders') }}</span>
+        </el-menu-item>
+        <el-menu-item index="/detection-events">
+          <el-icon><Monitor /></el-icon>
+          <span>{{ t('nav.detectionEvents') }}</span>
         </el-menu-item>
         <el-menu-item v-if="auth.isAdmin" index="/users">
           <el-icon><User /></el-icon>
