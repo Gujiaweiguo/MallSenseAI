@@ -42,6 +42,11 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'camera.detailTitle' },
       },
       {
+        path: 'cameras/:id/scenes',
+        name: 'camera-scenes',
+        component: () => import('@/views/CameraScenesRedirect.vue'),
+      },
+      {
         path: 'cameras/:id/rules',
         name: 'camera-rules',
         component: () => import('@/views/RuleConfigView.vue'),

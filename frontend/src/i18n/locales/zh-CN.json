@@ -77,7 +77,10 @@
       "batchConfirm": "批量确认",
       "batchResolve": "批量解决",
       "signIn": "登录",
-      "logout": "退出"
+      "logout": "退出",
+      "config": "配置",
+      "scenes": "场景",
+      "rules": "规则"
     },
     "empty": {
       "noCameras": "未找到摄像头。",

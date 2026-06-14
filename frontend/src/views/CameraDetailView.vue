@@ -1,5 +1,10 @@
 <template>
   <section class="page-card">
+    <el-page-header :icon="null" @back="$router.back()">
+      <template #content>
+        <span>{{ t('camera.detailTitle') }}</span>
+      </template>
+    </el-page-header>
     <div class="page-header">
       <div>
         <h2 class="page-title">{{ t('camera.detailTitle') }}</h2>
@@ -67,18 +72,30 @@
     <el-empty v-else :description="t('common.empty.cameraNotFound')" />
 
     <!-- Related links -->
-    <div v-if="camera" class="related-links">
-      <h3>{{ t('common.related') }}</h3>
-      <ul>
-        <li><RouterLink :to="`/scenes?camera_id=${camera.id}`">{{ t('camera.scenesForCamera') }}</RouterLink></li>
-        <li><RouterLink :to="`/cameras/${camera.id}/rules`">{{ t('camera.rulesForCamera') }}</RouterLink></li>
-      </ul>
+    <div v-if="camera" class="related-cards">
+      <RouterLink :to="`/cameras/${camera.id}/scenes`" class="related-card">
+        <el-icon :size="28" color="#409eff"><PictureFilled /></el-icon>
+        <div class="related-card__body">
+          <span class="related-card__title">{{ t('common.button.scenes') }}</span>
+          <span class="related-card__desc">{{ t('camera.scenesForCamera') }}</span>
+        </div>
+        <el-icon :size="16" color="#c0c4cc"><ArrowRight /></el-icon>
+      </RouterLink>
+      <RouterLink :to="`/cameras/${camera.id}/rules`" class="related-card">
+        <el-icon :size="28" color="#e6a23c"><Setting /></el-icon>
+        <div class="related-card__body">
+          <span class="related-card__title">{{ t('common.button.rules') }}</span>
+          <span class="related-card__desc">{{ t('camera.rulesForCamera') }}</span>
+        </div>
+        <el-icon :size="16" color="#c0c4cc"><ArrowRight /></el-icon>
+      </RouterLink>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus';
+import { ArrowRight, PictureFilled, Setting } from '@element-plus/icons-vue';
 import { onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -199,23 +216,45 @@ onMounted(() => {
   align-items: center;
 }
 
-.related-links {
+.related-cards {
   margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.related-links h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
+.related-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 240px;
 }
 
-.related-links ul {
-  list-style: none;
-  padding: 0;
+.related-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 8%);
 }
 
-.related-links li {
-  margin-bottom: 6px;
+.related-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.related-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.related-card__desc {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 </style>

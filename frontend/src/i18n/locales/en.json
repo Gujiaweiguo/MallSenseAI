@@ -77,7 +77,10 @@
       "batchConfirm": "Batch Confirm",
       "batchResolve": "Batch Resolve",
       "signIn": "Sign in",
-      "logout": "Logout"
+      "logout": "Logout",
+      "config": "Config",
+      "scenes": "Scenes",
+      "rules": "Rules"
     },
     "empty": {
       "noCameras": "No cameras found.",

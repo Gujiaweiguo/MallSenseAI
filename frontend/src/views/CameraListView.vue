@@ -22,9 +22,11 @@
           <el-tag :type="statusType(row.status)">{{ t('common.enum.cameraStatus.' + row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('common.table.actions')" width="180" fixed="right">
+      <el-table-column :label="t('common.table.actions')" width="280" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" @click="openEditDialog(row)">{{ t('common.button.edit') }}</el-button>
+          <el-button size="small" @click="openEditDialog(row)">{{ t('common.button.config') }}</el-button>
+          <el-button size="small" @click="$router.push(`/cameras/${row.id}/scenes`)">{{ t('common.button.scenes') }}</el-button>
+          <el-button size="small" @click="$router.push(`/cameras/${row.id}/rules`)">{{ t('common.button.rules') }}</el-button>
           <el-popconfirm
             :title="t('camera.deleteConfirm')"
             :confirm-button-text="t('common.button.delete')"

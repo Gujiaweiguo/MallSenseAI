@@ -1,5 +1,10 @@
 <template>
   <section class="page-card scene-detail">
+    <el-page-header :icon="null" @back="$router.back()">
+      <template #content>
+        <span class="scene-detail__breadcrumb">{{ t('scene.detailTitle') }}</span>
+      </template>
+    </el-page-header>
     <div class="scene-detail__header">
       <div>
         <h2 class="page-title">{{ t('scene.detailTitle') }}</h2>

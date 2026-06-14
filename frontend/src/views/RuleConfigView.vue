@@ -1,5 +1,10 @@
 <template>
   <section class="page-card rule-config">
+    <el-page-header :icon="null" @back="$router.back()">
+      <template #content>
+        <span>{{ t('rule.title') }}</span>
+      </template>
+    </el-page-header>
     <div class="rule-config__header">
       <div>
         <h2 class="page-title">{{ t('rule.title') }}</h2>
